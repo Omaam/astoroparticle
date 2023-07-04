@@ -53,6 +53,11 @@ def plot_and_save_energyspectra(energies, time_spectra, savename=None,
     for i, spectrum in enumerate(time_spectra):
         ax.plot(energies, spectrum, color=colors[i], alpha=0.30)
     ax.plot(energies, np.mean(time_spectra, axis=0), color="k")
+    ax.grid(which="minor", lw=0.5)
+    ax.set_xlabel("Energy (keV)")
+    ax.set_ylabel("Flux")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
     plt.tight_layout()
     if savename is not None:
         plt.savefig(savename, dpi=150)
