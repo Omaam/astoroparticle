@@ -41,16 +41,16 @@ def main():
         return x_hat
 
     def observation_function(_, x):
-        y_hat = []
+        flux = []
         for i in range(num_particles):
             model = xspec.Model("powerlaw")
             model.powerlaw.PhoIndex = 1.0 * np.exp(x[i, 0].numpy())
             model.powerlaw.norm = 10.0 * np.exp(x[i, 1].numpy())
-            y_hat.append(model.values(0))
-        count_rates = tf.convert_to_tensor(y_hat, dtype=dtype)
-        dist = tfd.Independent(tfd.Poisson(count_rates),
-                               reinterpreted_batch_ndims=1)
-        return dist
+            flux.append(model.values(0))
+        flux = tf.convert_to_tensor(flux, dtype=dtype)
+        poisson = tfd.Independent(tfd.Poisson(flux),
+                                  reinterpreted_batch_ndims=1)
+        return poisson
 
     initial_state_prior = tfd.MultivariateNormalDiag(
         loc=tf.constant([0.1, 0.1], dtype=dtype),
