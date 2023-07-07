@@ -1,15 +1,17 @@
 """Trial of the particle filter in TensorFlow Probability.
 """
 import os
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 import xspec
 import seaborn as sns
+
 import tensorflow as tf
 import tensorflow_probability as tfp
+from tensorflow_probability import bijectors as tfb
 from tensorflow_probability import distributions as tfd
-
 
 import partical_xspec as px
 
@@ -42,23 +44,19 @@ def main():
     dtype = tf.float32
     num_particles = 1000
 
-    var_coef = np.tile(np.diag([0.1, 0.1]), (2, 1, 1))
-    transition_noise_cov = np.diag(
-        tf.convert_to_tensor([0.1, 0.1], dtype=dtype))
-    transition_function = px.get_transition_fn_varmodel(
-        var_coef, transition_noise_cov, dtype)
+    blockwise_bijector = tfb.Blockwise(
+        bijectors=[tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
+                   tfb.Chain([tfb.Scale(10.), tfb.Exp()])]
+    )
 
-    def observation_function(_, x):
-        flux = []
-        for i in range(num_particles):
-            model = xspec.Model("powerlaw")
-            model.powerlaw.PhoIndex = 1.0 * np.exp(x[i, 0].numpy())
-            model.powerlaw.norm = 10.0 * np.exp(x[i, 1].numpy())
-            flux.append(model.values(0))
-        flux = tf.convert_to_tensor(flux, dtype=dtype)
-        poisson = tfd.Independent(tfd.Poisson(flux),
-                                  reinterpreted_batch_ndims=1)
-        return poisson
+    transition_function = px.get_transition_function_varmodel(
+        coefficients=np.tile(np.diag([0.1, 0.1]), (1, 1, 1)),
+        noise_covariance=np.diag(
+            tf.convert_to_tensor([0.1, 0.1], dtype=dtype)),
+        dtype=dtype)
+
+    observation_function = px.get_observaton_function_xspec_poisson(
+        "powerlaw", num_particles, blockwise_bijector)
 
     initial_state_prior = tfd.MultivariateNormalDiag(
         loc=tf.constant([0.1, 0.1], dtype=dtype),
@@ -69,14 +67,19 @@ def main():
     observations = tf.convert_to_tensor(
         np.loadtxt(".cache/observations.txt"),
         dtype=dtype)
+
+    t0 = time.time()
     particles, _, _, log_lik = tfp_exp.mcmc.particle_filter(
         observations,
         initial_state_prior,
         transition_function,
         observation_function,
         num_particles,
+        parallel_iterations=1,
         seed=0
     )
+    t1 = time.time()
+    print("Inference ran in {:.2f}s.".format(t1-t0))
 
     particles = np.array([1.0, 10.]) * np.exp(particles)
 
