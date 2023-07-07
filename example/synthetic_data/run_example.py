@@ -1,5 +1,7 @@
 """Trial of the particle filter in TensorFlow Probability.
 """
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import xspec
@@ -8,11 +10,20 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow_probability import distributions as tfd
 
-import util
+
+import partical_xspec as px
+
 
 sns.set_style("whitegrid")
 
 tfp_exp = tfp.experimental
+
+
+def join_and_create_directory(a, *paths, exist_ok=True):
+    file_path = os.path.join(a, *paths)
+    directory = os.path.dirname(file_path)
+    os.makedirs(directory, exist_ok=exist_ok)
+    return file_path
 
 
 def xspec_settings():
@@ -31,15 +42,11 @@ def main():
     dtype = tf.float32
     num_particles = 1000
 
-    transition_noise_scales = tf.constant(
-        np.sqrt([0.1, 0.1]), dtype=dtype)
-
-    def transition_function(_, x):
-        # Assume AR(1) model, where a1=0.1, for each variable.
-        x_hat = 0.1 * x
-        x_hat = tfd.MultivariateNormalDiag(
-            loc=x-x_hat, scale_diag=transition_noise_scales)
-        return x_hat
+    var_coef = np.tile(np.diag([0.1, 0.1]), (2, 1, 1))
+    transition_noise_cov = np.diag(
+        tf.convert_to_tensor([0.1, 0.1], dtype=dtype))
+    transition_function = px.get_transition_fn_varmodel(
+        var_coef, transition_noise_cov, dtype)
 
     def observation_function(_, x):
         flux = []
@@ -101,7 +108,7 @@ def main():
     fig.align_ylabels()
     plt.tight_layout()
 
-    savepath = util.join_and_create_directory(
+    savepath = join_and_create_directory(
         ".cache", "figs", "curve_particle_filtered.png")
     plt.savefig(savepath, dpi=150)
     plt.show()

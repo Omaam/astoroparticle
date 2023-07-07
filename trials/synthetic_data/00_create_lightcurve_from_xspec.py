@@ -16,7 +16,7 @@ def generate_sample_varmodel(num_timesteps, ndim=1,
                              random_seed=None):
     coefs = np.tile(np.diag(np.repeat(0.1, ndim)),
                     (order, 1, 1))
-    noise_cov = np.diag(np.repeat(noise_scale, ndim))
+    noise_cov = np.diag(np.repeat(noise_scale**2, ndim))
     varmodel = VARProcess(coefs, coefs_exog=None,
                           sigma_u=noise_cov)
     data = varmodel.simulate_var(num_timesteps,
