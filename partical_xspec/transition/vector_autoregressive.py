@@ -48,7 +48,7 @@ def make_var_transition_matrix(coefficients):
     return var_matrix
 
 
-def get_transition_fn_varmodel(coefficients,
+def get_transition_function_varmodel(coefficients,
                                noise_covariance,
                                dtype=tf.float32):
 
