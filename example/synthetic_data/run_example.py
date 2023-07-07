@@ -1,10 +1,10 @@
 """Trial of the particle filter in TensorFlow Probability.
 """
+import sys
 import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-import xspec
 import seaborn as sns
 
 import tensorflow as tf
@@ -16,17 +16,6 @@ import partical_xspec as px
 import util
 
 sns.set_style("whitegrid")
-
-
-def xspec_settings():
-    # Parameter settings.
-    enery_kev_start = 0.5
-    enery_kev_end = 10.0
-    num_bands = 10
-
-    # Model settings.
-    xspec.AllModels.setEnergies(
-        f"{enery_kev_start} {enery_kev_end} {num_bands}")
 
 
 def plot_and_save_particle_distribution_with_latents(
@@ -74,10 +63,15 @@ def plot_and_save_particle_distribution_with_latents(
 
 def main():
 
-    xspec_settings()
+    px.xspec.set_energy(0.5, 10.0, 10)
+
+    try:
+        if sys.argv[1] == "test":
+            num_particles = 100
+    except IndexError:
+        num_particles = 10000
 
     dtype = tf.float32
-    num_particles = 10000
 
     blockwise_bijector = tfb.Blockwise(
         bijectors=[tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
