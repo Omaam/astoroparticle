@@ -1,6 +1,5 @@
 """Trial of the particle filter in TensorFlow Probability.
 """
-import os
 import time
 
 import matplotlib.pyplot as plt
@@ -14,18 +13,9 @@ from tensorflow_probability import bijectors as tfb
 from tensorflow_probability import distributions as tfd
 
 import partical_xspec as px
-
+import util
 
 sns.set_style("whitegrid")
-
-tfp_exp = tfp.experimental
-
-
-def join_and_create_directory(a, *paths, exist_ok=True):
-    file_path = os.path.join(a, *paths)
-    directory = os.path.dirname(file_path)
-    os.makedirs(directory, exist_ok=exist_ok)
-    return file_path
 
 
 def xspec_settings():
@@ -39,7 +29,52 @@ def xspec_settings():
         f"{enery_kev_start} {enery_kev_end} {num_bands}")
 
 
+def plot_and_save_particle_distribution_with_latents(
+        particles, true_latents=None, times=None,
+        particle_quantiles=None):
+
+    if true_latents.shape[-2] != particles.shape[-3]:
+        raise ValueError(
+            "`true_latents.shape[-2]` must be `particles.shape[-3]`. "
+            f"{true_latents.shape[-2]} != {particles.shape[-3]}.")
+
+    if times is None:
+        times = np.arange(particles.shape[-3])
+
+    fig, ax = plt.subplots(2, sharex=True)
+
+    y_centers = np.quantile(particles, 0.5, axis=-2)
+    ax[0].plot(times, y_centers[:, 0], color="r")
+    ax[1].plot(times, y_centers[:, 1], color="r")
+
+    if true_latents is not None:
+        ax[0].plot(times, true_latents[:, 0], color="k")
+        ax[1].plot(times, true_latents[:, 1], color="k")
+
+    if particle_quantiles is not None:
+        for quantile in particle_quantiles:
+            errors_sigma = np.quantile(particles, quantile, axis=-2)
+            for i in range(2):
+                ax[i].fill_between(
+                    times, *errors_sigma[..., i], alpha=0.20,
+                    facecolor="none", color="r", edgecolor="none")
+
+    ax[-1].set_xlabel("Time")
+    ax[0].set_ylabel("powerlaw.PhoIndex")
+    ax[1].set_ylabel("powerlaw.norm")
+    fig.align_ylabels()
+    plt.tight_layout()
+
+    savepath = util.join_and_create_directory(
+        ".cache", "figs", "curve_particle_filtered.png")
+    plt.savefig(savepath, dpi=150)
+    plt.show()
+    plt.close()
+
+
 def main():
+
+    xspec_settings()
 
     dtype = tf.float32
     num_particles = 1000
@@ -62,14 +97,12 @@ def main():
         loc=tf.constant([0.1, 0.1], dtype=dtype),
         scale_diag=tf.constant([0.01, 0.01], dtype=dtype))
 
-    xspec_settings()
-
     observations = tf.convert_to_tensor(
         np.loadtxt(".cache/observations.txt"),
         dtype=dtype)
 
     t0 = time.time()
-    particles, _, _, log_lik = tfp_exp.mcmc.particle_filter(
+    particles, _, _, log_lik = tfp.experimental.mcmc.particle_filter(
         observations,
         initial_state_prior,
         transition_function,
@@ -81,41 +114,13 @@ def main():
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
 
-    particles = np.array([1.0, 10.]) * np.exp(particles)
-
-    y_centers = np.quantile(particles, 0.5, axis=-2)
+    particles_bijectored = blockwise_bijector.forward(particles)
 
     latents = np.loadtxt(".cache/latents.txt")
-    times = np.arange(latents.shape[0])
-    fig, ax = plt.subplots(2, sharex=True)
-    ax[0].plot(times, latents[:, 0], color="k")
-    ax[1].plot(times, latents[:, 1], color="k")
-    ax[0].plot(times, y_centers[:, 0], color="r")
-    ax[1].plot(times, y_centers[:, 1], color="r")
-
-    errors_sigma_1 = np.quantile(particles, [0.160, 0.840], axis=-2)
-    errors_sigma_2 = np.quantile(particles, [0.025, 0.975], axis=-2)
-    errors_sigma_3 = np.quantile(particles, [0.001, 0.999], axis=-2)
-    for i in range(2):
-        common_kw = dict(facecolor="none", color="r", edgecolor="none")
-        ax[i].fill_between(times, *errors_sigma_1[..., i], alpha=0.20,
-                           **common_kw)
-        ax[i].fill_between(times, *errors_sigma_2[..., i], alpha=0.20,
-                           **common_kw)
-        ax[i].fill_between(times, *errors_sigma_3[..., i], alpha=0.20,
-                           **common_kw)
-
-    ax[-1].set_xlabel("Time")
-    ax[0].set_ylabel("powerlaw.PhoIndex")
-    ax[1].set_ylabel("powerlaw.norm")
-    fig.align_ylabels()
-    plt.tight_layout()
-
-    savepath = join_and_create_directory(
-        ".cache", "figs", "curve_particle_filtered.png")
-    plt.savefig(savepath, dpi=150)
-    plt.show()
-    plt.close()
+    particle_quantiles = [[0.160, 0.840], [0.025, 0.975], [0.001, 0.999]]
+    plot_and_save_particle_distribution_with_latents(
+        particles_bijectored, latents,
+        particle_quantiles=particle_quantiles)
 
 
 if __name__ == "__main__":

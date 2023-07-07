@@ -1,12 +1,16 @@
 """Create light curve by defining Xspec paramter's variation.
 """
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import xspec
 from statsmodels.tsa.vector_ar.var_model import VARProcess
 
-import util
+
+sys.path.append("..")
+
 
 sns.set_style("whitegrid")
 
@@ -95,22 +99,24 @@ def main():
         rate = np.random.poisson(flux)
         time_spectra[i] = rate
 
+    import util
+
     savepath_latent = util.join_and_create_directory(
-        ".cache", "latents.txt")
+        "latents.txt")
     np.savetxt(savepath_latent, params)
     savepath_observation = util.join_and_create_directory(
-        ".cache", "observations.txt")
+        "observations.txt")
     np.savetxt(savepath_observation, time_spectra)
 
     save_curve_path = util.join_and_create_directory(
-        ".cache", "figs", "curve_parameter_observation.png")
+        "..", ".cache", "figs", "curve_parameter_observation.png")
     plot_and_save_curve_parameter_observation(
         times, params, time_spectra, savename=save_curve_path)
 
     energy_edges = np.array(xspec_model.energies(0))
     energies = (energy_edges[1:] + energy_edges[:-1]) / 2
     save_spectra_path = util.join_and_create_directory(
-        ".cache", "figs", "observed_energy_spectra.png")
+        "..", ".cache", "figs", "observed_energy_spectra.png")
     plot_and_save_energyspectra(
         energies, time_spectra, savename=save_spectra_path)
 
