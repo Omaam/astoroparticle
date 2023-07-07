@@ -30,26 +30,26 @@ def xspec_settings():
 
 
 def plot_and_save_particle_distribution_with_latents(
-        particles, true_latents=None, times=None,
+        particles, latents_true=None, times=None,
         particle_quantiles=None):
 
-    if true_latents.shape[-2] != particles.shape[-3]:
+    if latents_true.shape[-2] != particles.shape[-3]:
         raise ValueError(
-            "`true_latents.shape[-2]` must be `particles.shape[-3]`. "
-            f"{true_latents.shape[-2]} != {particles.shape[-3]}.")
+            "`latents_true.shape[-2]` must be `particles.shape[-3]`. "
+            f"{latents_true.shape[-2]} != {particles.shape[-3]}.")
 
     if times is None:
         times = np.arange(particles.shape[-3])
 
     fig, ax = plt.subplots(2, sharex=True)
 
+    if latents_true is not None:
+        ax[0].plot(times, latents_true[:, 0], color="k")
+        ax[1].plot(times, latents_true[:, 1], color="k")
+
     y_centers = np.quantile(particles, 0.5, axis=-2)
     ax[0].plot(times, y_centers[:, 0], color="r")
     ax[1].plot(times, y_centers[:, 1], color="r")
-
-    if true_latents is not None:
-        ax[0].plot(times, true_latents[:, 0], color="k")
-        ax[1].plot(times, true_latents[:, 1], color="k")
 
     if particle_quantiles is not None:
         for quantile in particle_quantiles:
@@ -77,7 +77,7 @@ def main():
     xspec_settings()
 
     dtype = tf.float32
-    num_particles = 1000
+    num_particles = 10000
 
     blockwise_bijector = tfb.Blockwise(
         bijectors=[tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
