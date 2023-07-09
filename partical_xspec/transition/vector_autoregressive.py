@@ -49,13 +49,10 @@ def make_var_transition_matrix(coefficients):
 
 
 def get_transition_function_varmodel(coefficients,
-                               noise_covariance,
-                               dtype=tf.float32):
+                                     noise_covariance,
+                                     dtype=tf.float32):
 
     coefficients = tf.convert_to_tensor(coefficients, dtype=dtype)
-    if tf.rank(coefficients) < 3:
-        raise ValueError(
-            "`tf.rank(coefficients)` must be >= 3")
     order = coefficients.shape[-3]
     latent_size = coefficients.shape[-2]
 
