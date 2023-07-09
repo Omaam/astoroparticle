@@ -1,9 +1,10 @@
 """Xspec implemented observation function.
 """
 import xspec
-
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
+from tensorflow.python.ops.numpy_ops import np_config
+np_config.enable_numpy_behavior()
 
 
 def get_observaton_function_xspec_poisson(
@@ -16,15 +17,14 @@ def get_observaton_function_xspec_poisson(
     x_param_names = []
     for comp_name in model.componentNames:
         x_param_names.extend(getattr(model, comp_name).parameterNames)
-    num_params = len(x_param_names)
+    model = xspec.Model(model_str)
 
     def _observation_function(_, x):
         flux = []
-        x_bijectored = bijector.forward(x)
+        x_bijectored = bijector.forward(x).numpy()
         for i in range(num_particles):
-            model = xspec.Model(model_str)
-            for j in range(num_params):
-                model(j+1).values = x_bijectored[i, j].numpy()
+            # TODO: tolist() should not use.
+            model.setPars(*x_bijectored[i].tolist())
             flux.append(model.values(0))
         flux = tf.convert_to_tensor(flux, dtype=dtype)
         poisson = tfd.Independent(tfd.Poisson(flux),
