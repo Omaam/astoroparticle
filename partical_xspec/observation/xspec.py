@@ -9,6 +9,7 @@ np_config.enable_numpy_behavior()
 
 def get_observaton_function_xspec_poisson(
         model_str,
+        xspec_param_size,
         num_particles,
         bijector=None,
         dtype=tf.float32):
@@ -21,10 +22,12 @@ def get_observaton_function_xspec_poisson(
 
     def _observation_function(_, x):
         flux = []
-        x_bijectored = bijector.forward(x).numpy()
+        if bijector is not None:
+            x = bijector.forward(x)
+        x = x.numpy()[:, :xspec_param_size]
         for i in range(num_particles):
             # TODO: tolist() should not use.
-            model.setPars(*x_bijectored[i].tolist())
+            model.setPars(*x[i].tolist())
             flux.append(model.values(0))
         flux = tf.convert_to_tensor(flux, dtype=dtype)
         poisson = tfd.Independent(tfd.Poisson(flux),

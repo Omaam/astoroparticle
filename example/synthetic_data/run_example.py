@@ -85,7 +85,7 @@ def main():
         dtype=dtype)
 
     observation_function = px.get_observaton_function_xspec_poisson(
-        "powerlaw", num_particles, blockwise_bijector)
+        "powerlaw", 2, num_particles, blockwise_bijector)
 
     initial_state_prior = tfd.MultivariateNormalDiag(
         loc=tf.constant([0.1, 0.1], dtype=dtype),
