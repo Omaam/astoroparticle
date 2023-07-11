@@ -22,9 +22,9 @@ def get_observaton_function_xspec_poisson(
 
     def _observation_function(_, x):
         flux = []
+        x = x[:, :xspec_param_size]
         if bijector is not None:
             x = bijector.forward(x)
-        x = x.numpy()[:, :xspec_param_size]
         for i in range(num_particles):
             # TODO: tolist() should not use.
             model.setPars(*x[i].tolist())

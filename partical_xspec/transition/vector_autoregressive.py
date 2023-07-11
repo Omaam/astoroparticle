@@ -48,9 +48,9 @@ def make_var_transition_matrix(coefficients):
     return var_matrix
 
 
-def get_transition_function_varmodel(coefficients,
-                                     noise_covariance,
-                                     dtype=tf.float32):
+def get_transition_var(coefficients,
+                       noise_covariance,
+                       dtype=tf.float32):
 
     coefficients = tf.convert_to_tensor(coefficients, dtype=dtype)
     order = coefficients.shape[-3]
@@ -63,7 +63,7 @@ def get_transition_function_varmodel(coefficients,
             tf.linalg.cholesky(noise_covariance)),
          tf.linalg.LinearOperatorZeros((order-1)*latent_size)])
 
-    def _transition_fn_varmodel(_, x):
+    def _transition_function(_, x):
         x = tf.convert_to_tensor(x[tf.newaxis, :], dtype)
         x_tp1 = x @ transition_matrix
 
@@ -71,4 +71,4 @@ def get_transition_function_varmodel(coefficients,
             loc=tf.squeeze(x-x_tp1, axis=0),
             scale_tril=transition_noise_cov_chol.to_dense())
 
-    return _transition_fn_varmodel
+    return _transition_function

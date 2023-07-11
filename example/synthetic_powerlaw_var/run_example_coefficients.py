@@ -78,12 +78,6 @@ def main():
                    tfb.Chain([tfb.Scale(10.), tfb.Exp()])]
     )
 
-    transition_function = px.get_transition_function_varmodel(
-        coefficients=np.tile(np.diag([0.1, 0.1]), (1, 1, 1)),
-        noise_covariance=np.diag(
-            tf.convert_to_tensor([0.1, 0.1], dtype=dtype)),
-        dtype=dtype)
-
     observation_function = px.get_observaton_function_xspec_poisson(
         "powerlaw", 2, num_particles, blockwise_bijector)
 
@@ -95,26 +89,33 @@ def main():
         np.loadtxt(".cache/observations.txt"),
         dtype=dtype)
 
-    t0 = time.time()
-    particles, _, _, log_lik = tfp.experimental.mcmc.particle_filter(
-        observations,
-        initial_state_prior,
-        transition_function,
-        observation_function,
-        num_particles,
-        parallel_iterations=1,
-        seed=0
-    )
-    t1 = time.time()
-    print("Inference ran in {:.2f}s.".format(t1-t0))
+    coef_list = tf.range(0.0, 0.9, 0.1)
+    log_lik_list = []
+    for coef in coef_list:
+        print(f"start with coefficient = {coef}")
+        transition_function = px.get_transition_function_varmodel(
+            coefficients=np.tile(np.diag([coef, coef]), (1, 1, 1)),
+            noise_covariance=np.diag(
+                tf.convert_to_tensor([0.1, 0.1], dtype=dtype)),
+            dtype=dtype)
 
-    particles_bijectored = blockwise_bijector.forward(particles)
+        t0 = time.time()
+        particles, _, _, log_lik = tfp.experimental.mcmc.particle_filter(
+            observations,
+            initial_state_prior,
+            transition_function,
+            observation_function,
+            num_particles,
+            parallel_iterations=1,
+            seed=0
+        )
+        t1 = time.time()
+        print("Inference ran in {:.2f}s.".format(t1-t0))
 
-    latents = np.loadtxt(".cache/latents.txt")
-    particle_quantiles = [[0.160, 0.840], [0.025, 0.975], [0.001, 0.999]]
-    plot_and_save_particle_distribution_with_latents(
-        particles_bijectored, latents,
-        particle_quantiles=particle_quantiles)
+        log_lik_list.append(tf.reduce_mean(log_lik))
+
+    plt.plot(coef_list, log_lik_list)
+    plt.show()
 
 
 if __name__ == "__main__":
