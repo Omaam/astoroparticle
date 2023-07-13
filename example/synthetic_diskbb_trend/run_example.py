@@ -19,8 +19,12 @@ sns.set_style("whitegrid")
 
 
 def plot_and_save_particle_distribution_with_latents(
-        particles, latents_true=None, times=None,
-        particle_quantiles=None):
+        particles,
+        latents_true=None,
+        times=None,
+        ylabels=None,
+        particle_quantiles=None,
+        indicies_logy=None):
 
     if latents_true.shape[-2] != particles.shape[-3]:
         raise ValueError(
@@ -48,9 +52,16 @@ def plot_and_save_particle_distribution_with_latents(
                     times, *errors_sigma[..., i], alpha=0.20,
                     facecolor="none", color="r", edgecolor="none")
 
+    if indicies_logy is not None:
+        for i in indicies_logy:
+            ax[i].set_yscale("log")
+
     ax[-1].set_xlabel("Time")
-    ax[0].set_ylabel("powerlaw.PhoIndex")
-    ax[1].set_ylabel("powerlaw.norm")
+
+    if ylabels is not None:
+        for i, ylabel in enumerate(ylabels):
+            ax[i].set_ylabel(ylabel)
+
     fig.align_ylabels()
     plt.tight_layout()
 
@@ -61,7 +72,7 @@ def plot_and_save_particle_distribution_with_latents(
     plt.close()
 
 
-def set_particle_numbers():
+def set_number_of_particle():
     try:
         if sys.argv[1] == "test":
             num_particles = 100
@@ -72,40 +83,37 @@ def set_particle_numbers():
 
 def main():
 
+    dtype = tf.float32
     px.xspec.set_energy(0.5, 10.0, 10)
 
-    num_particles = set_particle_numbers()
-
-    dtype = tf.float32
-    order = 1
-    # xspec_param_size = 2
-
-    blockwise_bijector = tfb.Blockwise(
-        bijectors=[tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
-                   tfb.Chain([tfb.Scale(10.), tfb.Exp()])]
-    )
-
-    coefficients = np.tile(np.diag([0.1, 0.1]), (order, 1, 1))
-    transition_noise_cov = np.diag(tf.convert_to_tensor([0.1, 0.1],
-                                   dtype=dtype))
-    var_trans = px.VectorAutoregressiveTransition(
-        coefficients, transition_noise_cov, dtype=dtype)
-
-    transition_fn = var_trans.transition_function
-
-    observation_fn = px.get_observaton_function_xspec_poisson(
-        "powerlaw", 2, num_particles, bijector=blockwise_bijector)
-
-    initial_state_prior = tfd.MultivariateNormalDiag(
-        loc=tf.constant([0.1, 0.1], dtype=dtype),
-        scale_diag=tf.constant([0.01, 0.01], dtype=dtype))
+    num_particles = set_number_of_particle()
 
     observations = tf.convert_to_tensor(
-        np.loadtxt(".cache/observations.txt"),
+        np.loadtxt("data/observations.txt"),
         dtype=dtype)
 
+    positive_bijector = tfb.Blockwise(
+        [tfb.Exp(), tfb.Exp()])
+
+    order = 2
+    xspec_param_size = 2
+    trans_trend = px.TransitionTrend(
+        order, xspec_param_size,
+        positive_bijector.inverse([0.1, 0.01]))
+    transition_fn = trans_trend.transition_function
+
+    observation_fn = px.get_observaton_function_xspec_poisson(
+        "diskbb", xspec_param_size, num_particles,
+        experimental_target_latent_indicies=[0, 1],
+        bijector=positive_bijector)
+
+    initial_state_prior = tfd.MultivariateNormalDiag(
+        loc=tf.tile(positive_bijector.inverse(
+            tf.constant([0.2, 1e5], dtype=dtype)), [order]),
+        scale_diag=tf.ones(order*xspec_param_size, dtype=dtype))
+
     t0 = time.time()
-    particles, _, _, log_lik = tfp.experimental.mcmc.particle_filter(
+    particles, _, _, _ = tfp.experimental.mcmc.particle_filter(
         observations,
         initial_state_prior,
         transition_fn,
@@ -117,13 +125,14 @@ def main():
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
 
-    particles_bijectored = blockwise_bijector.forward(particles)
+    particles = positive_bijector.forward(
+        particles[..., :xspec_param_size])
 
-    latents = np.loadtxt(".cache/latents.txt")
+    latents = np.loadtxt("data/latents.txt")
     particle_quantiles = [[0.160, 0.840], [0.025, 0.975], [0.001, 0.999]]
     plot_and_save_particle_distribution_with_latents(
-        particles_bijectored, latents,
-        particle_quantiles=particle_quantiles)
+        particles, latents, ylabels=["diskbb.Tin (keV)", "diskbb.norm"],
+        particle_quantiles=particle_quantiles, indicies_logy=[1])
 
 
 if __name__ == "__main__":

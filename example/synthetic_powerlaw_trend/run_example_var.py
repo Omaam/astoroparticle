@@ -61,10 +61,10 @@ def plot_and_save_particle_distribution_with_latents(
     plt.close()
 
 
-def set_particle_numbers():
+def set_numbers_of_particle():
     try:
         if sys.argv[1] == "test":
-            num_particles = 100
+            num_particles = 200
     except IndexError:
         num_particles = 10000
     return num_particles
@@ -74,42 +74,45 @@ def main():
 
     px.xspec.set_energy(0.5, 10.0, 10)
 
-    num_particles = set_particle_numbers()
+    num_particles = set_numbers_of_particle()
 
     dtype = tf.float32
-    order = 1
-    # xspec_param_size = 2
 
-    blockwise_bijector = tfb.Blockwise(
-        bijectors=[tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
-                   tfb.Chain([tfb.Scale(10.), tfb.Exp()])]
-    )
-
-    coefficients = np.tile(np.diag([0.1, 0.1]), (order, 1, 1))
-    transition_noise_cov = np.diag(tf.convert_to_tensor([0.1, 0.1],
-                                   dtype=dtype))
-    var_trans = px.VectorAutoregressiveTransition(
-        coefficients, transition_noise_cov, dtype=dtype)
-
-    transition_fn = var_trans.transition_function
-
-    observation_fn = px.get_observaton_function_xspec_poisson(
-        "powerlaw", 2, num_particles, bijector=blockwise_bijector)
-
-    initial_state_prior = tfd.MultivariateNormalDiag(
-        loc=tf.constant([0.1, 0.1], dtype=dtype),
-        scale_diag=tf.constant([0.01, 0.01], dtype=dtype))
-
+    latents = np.loadtxt("data/latents.txt")
     observations = tf.convert_to_tensor(
-        np.loadtxt(".cache/observations.txt"),
+        np.loadtxt("data/observations.txt"),
         dtype=dtype)
+
+    blockwise_bijector = tfb.Blockwise(bijectors=[
+            tfb.Exp(), tfb.Exp()])
+
+    coefficients = tf.constant(
+        [[[2.0, 0.0],
+          [0.0, 2.0]],
+         [[-1.0, 0.0],
+          [0.0, -1.0]]], dtype=dtype)
+
+    transition_function = px.get_transition_function_var(
+        coefficients=coefficients,
+        noise_covariance=np.diag(tf.constant([0.1, 0.1], dtype=dtype)),
+        dtype=dtype)
+
+    target_latent_indicies = [0, 1]
+    observation_function = px.get_observaton_function_xspec_poisson(
+        "powerlaw", 2, num_particles,
+        experimental_target_latent_indicies=target_latent_indicies,
+        bijector=blockwise_bijector)
+
+    locations = tf.constant([0.1, 2.0, 0.0, 0.0], dtype=dtype)
+    initial_state_prior = tfd.MultivariateNormalDiag(
+        loc=locations, scale_diag=0.1*locations)
 
     t0 = time.time()
     particles, _, _, log_lik = tfp.experimental.mcmc.particle_filter(
         observations,
         initial_state_prior,
-        transition_fn,
-        observation_fn,
+        transition_function,
+        observation_function,
         num_particles,
         parallel_iterations=1,
         seed=0
@@ -117,9 +120,9 @@ def main():
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
 
+    particles = particles[..., target_latent_indicies]
     particles_bijectored = blockwise_bijector.forward(particles)
 
-    latents = np.loadtxt(".cache/latents.txt")
     particle_quantiles = [[0.160, 0.840], [0.025, 0.975], [0.001, 0.999]]
     plot_and_save_particle_distribution_with_latents(
         particles_bijectored, latents,
