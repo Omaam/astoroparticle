@@ -29,6 +29,9 @@ class TransitionVectorAutoregressive(Transition):
 
         self.dtype = dtype
 
+    def _default_using_latent_indicies(self):
+        return tf.range(self.latent_size)
+
     def _transition_function(self):
 
         transition_matrix = self.transition_matrix

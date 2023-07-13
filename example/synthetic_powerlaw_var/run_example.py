@@ -78,7 +78,7 @@ def main():
 
     dtype = tf.float32
     order = 1
-    # xspec_param_size = 2
+    xspec_param_size = 2
 
     blockwise_bijector = tfb.Blockwise(
         bijectors=[tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
@@ -88,17 +88,19 @@ def main():
     coefficients = np.tile(np.diag([0.1, 0.1]), (order, 1, 1))
     transition_noise_cov = np.diag(tf.convert_to_tensor([0.1, 0.1],
                                    dtype=dtype))
-    var_trans = px.VectorAutoregressiveTransition(
+    var_trans = px.TransitionVectorAutoregressive(
         coefficients, transition_noise_cov, dtype=dtype)
 
     transition_fn = var_trans.transition_function
 
+    ids_latent = var_trans.default_using_latent_indicies
     observation_fn = px.get_observaton_function_xspec_poisson(
-        "powerlaw", 2, num_particles, bijector=blockwise_bijector)
+        "powerlaw", xspec_param_size, num_particles,
+        ids_latent, bijector=blockwise_bijector)
 
     initial_state_prior = tfd.MultivariateNormalDiag(
-        loc=tf.constant([0.1, 0.1], dtype=dtype),
-        scale_diag=tf.constant([0.01, 0.01], dtype=dtype))
+        loc=tf.repeat(0.1, order*xspec_param_size),
+        scale_diag=tf.repeat(0.01, order*xspec_param_size))
 
     observations = tf.convert_to_tensor(
         np.loadtxt(".cache/observations.txt"),
@@ -117,7 +119,8 @@ def main():
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
 
-    particles_bijectored = blockwise_bijector.forward(particles)
+    particles_bijectored = blockwise_bijector.forward(
+        particles[..., ids_latent])
 
     latents = np.loadtxt(".cache/latents.txt")
     particle_quantiles = [[0.160, 0.840], [0.025, 0.975], [0.001, 0.999]]
