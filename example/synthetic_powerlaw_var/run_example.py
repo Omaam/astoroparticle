@@ -61,31 +61,44 @@ def plot_and_save_particle_distribution_with_latents(
     plt.close()
 
 
-def main():
-
-    px.xspec.set_energy(0.5, 10.0, 10)
-
+def set_particle_numbers():
     try:
         if sys.argv[1] == "test":
             num_particles = 100
     except IndexError:
         num_particles = 10000
+    return num_particles
+
+
+def main():
+
+    px.xspec.set_energy(0.5, 10.0, 10)
+
+    num_particles = set_particle_numbers()
 
     dtype = tf.float32
+    order = 1
+    # xspec_param_size = 2
 
     blockwise_bijector = tfb.Blockwise(
         bijectors=[tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
                    tfb.Chain([tfb.Scale(10.), tfb.Exp()])]
     )
 
-    transition_function = px.get_transition_var(
-        coefficients=np.tile(np.diag([0.1, 0.1]), (1, 1, 1)),
-        noise_covariance=np.diag(
-            tf.convert_to_tensor([0.1, 0.1], dtype=dtype)),
+    coefficients = np.tile(np.diag([0.1, 0.1]), (order, 1, 1))
+    transition_noise_cov = np.diag(tf.convert_to_tensor([0.1, 0.1],
+                                   dtype=dtype))
+    transition_fn = px.get_transition_function_var(
+        coefficients=coefficients,
+        noise_covariance=transition_noise_cov,
+        dtype=dtype)
+    proposal_fn = px.get_proposal_function_var(
+        coefficients=coefficients,
+        noise_covariance=transition_noise_cov,
         dtype=dtype)
 
-    observation_function = px.get_observaton_function_xspec_poisson(
-        "powerlaw", 2, num_particles, blockwise_bijector)
+    observation_fn = px.get_observaton_function_xspec_poisson(
+        "powerlaw", 2, num_particles, bijector=blockwise_bijector)
 
     initial_state_prior = tfd.MultivariateNormalDiag(
         loc=tf.constant([0.1, 0.1], dtype=dtype),
@@ -99,9 +112,10 @@ def main():
     particles, _, _, log_lik = tfp.experimental.mcmc.particle_filter(
         observations,
         initial_state_prior,
-        transition_function,
-        observation_function,
+        transition_fn,
+        observation_fn,
         num_particles,
+        proposal_fn=proposal_fn,
         parallel_iterations=1,
         seed=0
     )

@@ -11,18 +11,19 @@ def get_observaton_function_xspec_poisson(
         model_str,
         xspec_param_size,
         num_particles,
+        experimental_target_latent_indicies=None,
         bijector=None,
         dtype=tf.float32):
 
-    model = xspec.Model("powerlaw")
+    model = xspec.Model(model_str)
     x_param_names = []
     for comp_name in model.componentNames:
         x_param_names.extend(getattr(model, comp_name).parameterNames)
-    model = xspec.Model(model_str)
 
     def _observation_function(_, x):
         flux = []
-        x = x[:, :xspec_param_size]
+        if experimental_target_latent_indicies is not None:
+            x = x[:, experimental_target_latent_indicies]
         if bijector is not None:
             x = bijector.forward(x)
         for i in range(num_particles):
@@ -30,8 +31,8 @@ def get_observaton_function_xspec_poisson(
             model.setPars(*x[i].tolist())
             flux.append(model.values(0))
         flux = tf.convert_to_tensor(flux, dtype=dtype)
-        poisson = tfd.Independent(tfd.Poisson(flux),
-                                  reinterpreted_batch_ndims=1)
-        return poisson
+        observation_dist = tfd.Independent(
+            tfd.Poisson(flux), reinterpreted_batch_ndims=1)
+        return observation_dist
 
     return _observation_function

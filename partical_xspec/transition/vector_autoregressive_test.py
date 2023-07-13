@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 
 import partical_xspec as px
-import partical_xspec.transition.vector_autoregressive as var
+import partical_xspec.transition.util as trans_util
 
 
 class VectorAutoregressiveTest(unittest.TestCase):
@@ -21,7 +21,7 @@ class VectorAutoregressiveTest(unittest.TestCase):
                        [0.0, 0.1]]]),
             dtype=self.DTYPE)
 
-        actual = var.make_var_transition_matrix(coefficients)
+        actual = trans_util.make_companion_matrix(coefficients)
         expect = tf.convert_to_tensor(
             np.array([[0.1, 0.0, 0.1, 0.0],
                       [0.0, 0.1, 0.0, 0.1],
@@ -43,7 +43,7 @@ class VectorAutoregressiveTest(unittest.TestCase):
             np.array([[0.01, 0.00],
                       [0.00, 0.01]]),
             dtype=dtype)
-        transition_fn = px.get_transition_function_varmodel(
+        transition_fn = px.get_transition_function_var(
             coefficients, noise_covariance)
 
         x = tf.constant([1.0, 1.0, 0.0, 0.0])
