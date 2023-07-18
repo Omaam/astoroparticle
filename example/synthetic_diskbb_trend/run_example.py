@@ -75,7 +75,7 @@ def plot_and_save_particle_distribution_with_latents(
 def set_number_of_particle():
     try:
         if sys.argv[1] == "test":
-            num_particles = 100
+            num_particles = 200
     except IndexError:
         num_particles = 10000
     return num_particles
@@ -95,29 +95,37 @@ def main():
     positive_bijector = tfb.Blockwise(
         [tfb.Exp(), tfb.Exp()])
 
-    order = 2
-    xspec_param_size = 2
-    trans_trend = px.TransitionTrend(
-        order, xspec_param_size,
-        positive_bijector.inverse([0.1, 0.01]))
-    transition_fn = trans_trend.transition_function
+    # Assumes that
+    # parameter1 of xspec follows trend (1; random walk),
+    # parameter2 of xspec follows trend (2).
+    coefficients = tf.constant(
+        [[[1.0, 0.0],
+          [0.0, 2.0]],
+         [[0.0, 0.0],
+          [0.0, -1.0]]],
+        dtype=dtype)
+    order = coefficients.shape[0]
+    xspec_param_size = coefficients.shape[1]
+    transition_noise_cov = tf.linalg.diag([0.3, 0.1])
+    var_trans = px.TransitionVectorAutoregressive(
+        coefficients, transition_noise_cov, dtype=dtype)
+    transition_function = var_trans.transition_function
 
-    observation_fn = px.get_observaton_function_xspec_poisson(
-        "diskbb", xspec_param_size, num_particles,
-        experimental_target_latent_indicies=[0, 1],
+    observation_function = px.get_observaton_function_xspec_poisson(
+        "diskbb", xspec_param_size, num_particles, [0, 1],
         bijector=positive_bijector)
 
     initial_state_prior = tfd.MultivariateNormalDiag(
         loc=tf.tile(positive_bijector.inverse(
-            tf.constant([0.2, 1e5], dtype=dtype)), [order]),
+            tf.constant([0.2, 1e6], dtype=dtype)), [order]),
         scale_diag=tf.ones(order*xspec_param_size, dtype=dtype))
 
     t0 = time.time()
     particles, _, _, _ = tfp.experimental.mcmc.particle_filter(
         observations,
         initial_state_prior,
-        transition_fn,
-        observation_fn,
+        transition_function,
+        observation_function,
         num_particles,
         parallel_iterations=1,
         seed=0
@@ -131,8 +139,11 @@ def main():
     latents = np.loadtxt("data/latents.txt")
     particle_quantiles = [[0.160, 0.840], [0.025, 0.975], [0.001, 0.999]]
     plot_and_save_particle_distribution_with_latents(
-        particles, latents, ylabels=["diskbb.Tin (keV)", "diskbb.norm"],
-        particle_quantiles=particle_quantiles, indicies_logy=[1])
+        particles,
+        latents,
+        ylabels=["diskbb.Tin (keV)", "diskbb.norm"],
+        particle_quantiles=particle_quantiles,
+        indicies_logy=[1])
 
 
 if __name__ == "__main__":
