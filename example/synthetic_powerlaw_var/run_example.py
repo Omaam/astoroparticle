@@ -20,7 +20,7 @@ sns.set_style("whitegrid")
 
 def plot_and_save_particle_distribution_with_latents(
         particles, latents_true=None, times=None,
-        particle_quantiles=None):
+        particle_quantiles=None, savepath=None):
 
     if latents_true.shape[-2] != particles.shape[-3]:
         raise ValueError(
@@ -54,9 +54,8 @@ def plot_and_save_particle_distribution_with_latents(
     fig.align_ylabels()
     plt.tight_layout()
 
-    savepath = util.join_and_create_directory(
-        ".cache", "figs", "curve_particle_filtered.png")
-    plt.savefig(savepath, dpi=150)
+    if savepath is not None:
+        plt.savefig(savepath, dpi=150)
     plt.show()
     plt.close()
 
@@ -107,26 +106,48 @@ def main():
         dtype=dtype)
 
     t0 = time.time()
-    particles, _, _, log_lik = tfp.experimental.mcmc.particle_filter(
-        observations,
-        initial_state_prior,
-        transition_fn,
-        observation_fn,
-        num_particles,
-        parallel_iterations=1,
-        seed=0
-    )
+    particles, log_weights, _, log_lik =  \
+        tfp.experimental.mcmc.particle_filter(
+            observations,
+            initial_state_prior,
+            transition_fn,
+            observation_fn,
+            num_particles,
+            parallel_iterations=1,
+            seed=0
+        )
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
 
     particles_bijectored = blockwise_bijector.forward(
         particles[..., ids_latent])
 
+    import pickle
+    with open(".cache/bijector.pkl", "wb") as f:
+        pickle.dump(blockwise_bijector, f)
+
+    np.save(".cache/particles", particles)
+    np.save(".cache/log_weights", log_weights)
+    np.save(".cache/log_likelyhood", log_lik)
+
     latents = np.loadtxt(".cache/latents.txt")
     particle_quantiles = [[0.160, 0.840], [0.025, 0.975], [0.001, 0.999]]
+
+    savepath = util.join_and_create_directory(
+        ".cache", "figs", "curve_particle_filtered.png")
     plot_and_save_particle_distribution_with_latents(
         particles_bijectored, latents,
-        particle_quantiles=particle_quantiles)
+        particle_quantiles=particle_quantiles,
+        savepath=savepath)
+
+    savepath = util.join_and_create_directory(
+        ".cache", "figs", "curve_particle_smoothed.png")
+    particle_obj = px.ParticleNumpy(particles_bijectored, log_weights)
+    smoothed_particles = particle_obj.smooth_lag_fixed(20)
+    plot_and_save_particle_distribution_with_latents(
+        smoothed_particles, latents,
+        particle_quantiles=particle_quantiles,
+        savepath=savepath)
 
 
 if __name__ == "__main__":
