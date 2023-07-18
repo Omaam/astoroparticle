@@ -96,15 +96,14 @@ def main():
          [[0.0, 0.0],
           [0.0, -1.0]]], dtype=dtype)
     transition_noise_cov = np.diag(tf.constant([0.1, 0.5], dtype=dtype))
-    var_trans = px.VectorAutoregressiveTransition(
+    var_trans = px.TransitionVectorAutoregressive(
         coefficients, transition_noise_cov, dtype=dtype)
 
     transition_fn = var_trans.transition_function
 
     target_latent_indicies = [0, 1]
     observation_fn = px.get_observaton_function_xspec_poisson(
-        "powerlaw", 2, num_particles,
-        experimental_target_latent_indicies=target_latent_indicies,
+        "powerlaw", 2, num_particles, target_latent_indicies,
         bijector=blockwise_bijector)
 
     locations = tf.constant([0.1, 1.0, 0.0, 0.0], dtype=dtype)

@@ -3,8 +3,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import seaborn as sns
 
 import partical_xspec as px
+
+sns.set_context("talk")
+sns.set_style("whitegrid")
 
 
 def simulate_powerlaw_parameters(num_timesteps):
@@ -31,15 +35,21 @@ def simulate_powerlaw_parameters(num_timesteps):
 
 def plot_xspec_param_observations(
         times, xspec_param_ts, observations_ts):
-    fig, ax = plt.subplots(3, sharex=True)
-    ax[0].plot(times, xspec_param_ts[:, 0, 0])
-    ax[1].plot(times, xspec_param_ts[:, 0, 1])
+    fig, ax = plt.subplots(3, sharex=True, figsize=(7, 6))
+    ax[0].plot(times, xspec_param_ts[:, 0, 0], color="k")
+    ax[1].plot(times, xspec_param_ts[:, 0, 1], color="k")
     ax[2].plot(times, observations_ts[:, 0, :])
 
-    ax[1].set_yscale("log")
+    ax[-1].set_xlabel("Time")
+    ax[0].set_ylabel("powerlaw\nPhoindex")
+    ax[1].set_ylabel("powerlaw\nnorm")
+    ax[2].set_ylabel("observed value")
 
+    fig.align_ylabels()
     plt.tight_layout()
+    plt.savefig("curve_parameter_observation.png", dpi=150)
     plt.show()
+    plt.close()
 
 
 def main():
