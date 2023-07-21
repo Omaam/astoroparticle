@@ -7,10 +7,10 @@ class Transition:
         pass
 
     @property
-    def default_using_latent_indicies(self):
+    def default_latent_indicies(self):
         return self._default_using_latent_indicies()
 
-    def _default_using_latent_indicies(self):
+    def _default_latent_indicies(self):
         raise NotImplementedError(
             "_parameter_properties` is not implemented: {}.".format(
                 self.__name__))

@@ -29,7 +29,7 @@ class TransitionVectorAutoregressive(Transition):
 
         self.dtype = dtype
 
-    def _default_using_latent_indicies(self):
+    def _default_latent_indicies(self):
         return tf.range(self.latent_size)
 
     def _transition_function(self):
