@@ -36,7 +36,3 @@ class ParticleNumpy:
     @property
     def shape(self):
         return self._particles.shape
-
-
-class ParticleTF:
-    pass

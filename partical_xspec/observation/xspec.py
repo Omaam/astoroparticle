@@ -4,6 +4,7 @@ import xspec
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
 from tensorflow.python.ops.numpy_ops import np_config
+
 np_config.enable_numpy_behavior()
 
 
