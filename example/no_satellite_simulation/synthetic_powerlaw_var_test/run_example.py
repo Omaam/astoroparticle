@@ -81,12 +81,13 @@ def main():
 
     blockwise_bijector = tfb.Blockwise(
         bijectors=[tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
-                   tfb.Chain([tfb.Scale(10.), tfb.Exp()])]
+                   tfb.Chain([tfb.Scale(10.0), tfb.Exp()])]
     )
 
     coefficients = np.tile(np.diag([0.1, 0.1]), (order, 1, 1))
-    transition_noise_cov = np.diag(tf.convert_to_tensor([0.1, 0.1],
-                                   dtype=dtype))
+    noise_scales = np.array([0.3, 0.3])
+    transition_noise_cov = np.diag(
+        tf.convert_to_tensor(noise_scales**2, dtype=dtype))
     var_trans = px.TransitionVectorAutoregressive(
         coefficients, transition_noise_cov, dtype=dtype)
 
@@ -102,7 +103,7 @@ def main():
         scale_diag=tf.repeat(0.01, order*xspec_param_size))
 
     observations = tf.convert_to_tensor(
-        np.loadtxt(".cache/observations.txt"),
+        np.loadtxt("data/observations.txt"),
         dtype=dtype)
 
     t0 = time.time()
@@ -122,15 +123,15 @@ def main():
     particles_bijectored = blockwise_bijector.forward(
         particles[..., ids_latent])
 
-    import pickle
-    with open(".cache/bijector.pkl", "wb") as f:
-        pickle.dump(blockwise_bijector, f)
+    # import pickle
+    # with open(".cache/bijector.pkl", "wb") as f:
+    #     pickle.dump(blockwise_bijector, f)
 
-    np.save(".cache/particles", particles)
-    np.save(".cache/log_weights", log_weights)
-    np.save(".cache/log_likelyhood", log_lik)
+    # np.save(".cache/particles", particles)
+    # np.save(".cache/log_weights", log_weights)
+    # np.save(".cache/log_likelyhood", log_lik)
 
-    latents = np.loadtxt(".cache/latents.txt")
+    latents = np.loadtxt("data/latents.txt")
     particle_quantiles = [[0.160, 0.840], [0.025, 0.975], [0.001, 0.999]]
 
     savepath = util.join_and_create_directory(

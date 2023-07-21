@@ -15,27 +15,28 @@ sys.path.append("..")
 sns.set_style("whitegrid")
 
 
-def generate_sample_varmodel(num_timesteps, ndim=1,
-                             order=1, noise_scale=0.1,
-                             random_seed=None):
-    coefs = np.tile(np.diag(np.repeat(0.1, ndim)),
-                    (order, 1, 1))
+def generate_sample_varmodel():
+
+    num_timesteps = 100
+    ndim = 2
+    order = 1
+    noise_scale = 0.3
+    random_seed = 123
+
+    coefs = np.tile(np.diag(np.repeat(0.1, ndim)), (order, 1, 1))
     noise_cov = np.diag(np.repeat(noise_scale**2, ndim))
-    varmodel = VARProcess(coefs, coefs_exog=None,
-                          sigma_u=noise_cov)
-    data = varmodel.simulate_var(num_timesteps,
-                                 seed=random_seed)
+    varmodel = VARProcess(coefs, coefs_exog=None, sigma_u=noise_cov)
+    data = varmodel.simulate_var(num_timesteps, seed=random_seed)
     return data
 
 
 def plot_and_save_curve_parameter_observation(
         times, parameters, time_spectra, savename=None, show=False):
-    time_spectra_for_plot = time_spectra - np.arange(time_spectra.shape[-1])
     fig, ax = plt.subplots(3, sharex="col", figsize=(7, 6))
     ax[0].plot(times, parameters[:, 0], color="k")
     ax[1].plot(times, parameters[:, 1], color="k")
     colors = sns.color_palette("Spectral", time_spectra.shape[-1])
-    for i, curve in enumerate(time_spectra_for_plot.T):
+    for i, curve in enumerate(time_spectra.T):
         ax[2].plot(times, curve, color=colors[i])
     ax[0].set_ylabel("powerlaw.PhoIndex")
     ax[1].set_ylabel("powerlaw.norm")
@@ -84,9 +85,7 @@ def main():
 
     xspec_model = xspec.Model("powerlaw")
 
-    params = generate_sample_varmodel(
-        num_timesteps, ndim=2, order=1,
-        random_seed=1)
+    params = generate_sample_varmodel()
     params = np.exp(params)
     params = params * np.array([1.0, 10.0])
 
@@ -111,7 +110,8 @@ def main():
     save_curve_path = util.join_and_create_directory(
         "..", ".cache", "figs", "curve_parameter_observation.png")
     plot_and_save_curve_parameter_observation(
-        times, params, time_spectra, savename=save_curve_path)
+        times, params, time_spectra, savename=save_curve_path,
+        show=True)
 
     energy_edges = np.array(xspec_model.energies(0))
     energies = (energy_edges[1:] + energy_edges[:-1]) / 2
