@@ -67,7 +67,7 @@ def main():
     num_timesteps = 100
     times, xspec_param_ts = simulate_diskbb_parameters(num_timesteps)
 
-    px.xspec.set_energy(0.5, 10.0, 10)
+    px.xspec.set_energy(0.5, 5.0, 20)
     obseravtion_fn = px.get_observaton_function_xspec_poisson(
         "diskbb", 2, 1)
 
@@ -83,7 +83,8 @@ def main():
 
     plot_and_save_xspec_param_observations(
         times, xspec_param_ts, observations_ts,
-        "curve_and_xspecparams.png")
+        "curve_and_xspecparams.png",
+        show=True)
 
 
 if __name__ == "__main__":

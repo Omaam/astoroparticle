@@ -1,4 +1,9 @@
-"""Trial of the particle filter in TensorFlow Probability.
+"""Example of diskbb following trend model.
+
+The difference between "../synthetic_diskbb_trend/" and this
+is that energy range and the number of bins:
+0.5-10. keV divided into 10 bins and
+0.5-5.0 keV divided into 20 bins.
 """
 import sys
 import time
@@ -67,7 +72,6 @@ def plot_and_save_particle_distribution_with_latents(
 
     if savename is not None:
         plt.savefig(savename, dpi=150)
-
     plt.show()
     plt.close()
 
@@ -84,7 +88,7 @@ def set_number_of_particle():
 def main():
 
     dtype = tf.float32
-    px.xspec.set_energy(0.5, 10.0, 10)
+    px.xspec.set_energy(0.5, 5.0, 20)
 
     num_particles = set_number_of_particle()
 
