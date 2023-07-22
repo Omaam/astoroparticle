@@ -3,11 +3,11 @@
 from tensorflow_probability import distributions as tfd
 import tensorflow as tf
 
-from partical_xspec.transition import util as trans_util
-from partical_xspec.transition.transition import Transition
+from partical_xspec.transitions import util as trans_util
+from partical_xspec.transitions.transition import Transition
 
 
-class TransitionVectorAutoregressive(Transition):
+class VectorAutoregressive(Transition):
     """
     """
     def __init__(self, coefficients, noise_covariance, dtype=tf.float32):

@@ -4,11 +4,11 @@ import math
 
 import tensorflow as tf
 
-from partical_xspec.transition.vector_autoregressive \
-    import TransitionVectorAutoregressive
+from partical_xspec.transitions.vector_autoregressive \
+    import VectorAutoregressive
 
 
-class TransitionTrend(TransitionVectorAutoregressive):
+class Trend(VectorAutoregressive):
     def __init__(self, order, xspec_parameter_size,
                  noise_scale, dtype=tf.float32):
         """Build Transition Trend for special case of VAR model.
@@ -26,7 +26,7 @@ class TransitionTrend(TransitionVectorAutoregressive):
             noise_scale = tf.repeat(noise_scale, xspec_parameter_size)
         transition_noise_cov = tf.linalg.diag(noise_scale**2)
 
-        super(TransitionTrend, self).__init__(
+        super(Trend, self).__init__(
             coefficients, transition_noise_cov, dtype)
 
 

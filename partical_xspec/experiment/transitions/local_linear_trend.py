@@ -7,7 +7,7 @@ TODO:
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
 
-from partical_xspec.transition.transition import Transition
+from partical_xspec.transitions.transition import Transition
 
 
 class TransitionLocalLinearTrend(Transition):
@@ -31,6 +31,7 @@ class TransitionLocalLinearTrend(Transition):
         self.latent_size = latent_size
         self.level_scale = level_scale
         self.slope_scale = slope_scale
+        self.dtype = dtype
 
     def _transition_function(self):
 
@@ -41,14 +42,15 @@ class TransitionLocalLinearTrend(Transition):
         transition_noise_scale = tf.reshape(
             tf.stack([self.level_scale, self.slope_scale], axis=-2), [-1])
 
-        transition_matrix_transpose = tf.matrix_traspose(transition_matrix)
+        transition_matrix_transpose = tf.linalg.matrix_transpose(
+            transition_matrix)
 
         def _transition_fn(_, x):
             x = tf.convert_to_tensor(x[tf.newaxis, :], self.dtype)
             fx = x @ transition_matrix_transpose
             transition_dist = tfd.MultivariateNormalDiag(
                 loc=tf.squeeze(fx, axis=0),
-                scale_scale=transition_noise_scale)
+                scale_diag=transition_noise_scale)
             return transition_dist
 
         return _transition_fn
