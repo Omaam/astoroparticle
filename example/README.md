@@ -5,9 +5,9 @@ Example template of particle estimating using `partical_xspec`.
 
 ## Template
 
-We show the example where observation is powerlaw in xspec with
-the Poisson noise and transtions is vector autoregressive model
-with order of 1.
+We show the example where `observation` is powerlaw of xspec that
+are observed with the Poisson noise and `transitions` is vector
+autoregressive model that have the order of one.
 
 ```python
 import numpy as np
