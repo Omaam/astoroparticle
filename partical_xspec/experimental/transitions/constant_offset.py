@@ -6,7 +6,7 @@ from tensorflow_probability import distributions as tfd
 from partical_xspec.transitions.transition import Transition
 
 
-class TransitionConstantOffset(Transition):
+class ConstantOffset(Transition):
     def __init__(self, constant_offset, dtype=tf.float32):
         """
         Args:

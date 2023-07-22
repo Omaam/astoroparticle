@@ -4,7 +4,7 @@ import numpy as np
 from scipy import special
 
 
-class ParticleNumpy:
+class WeightedParticleNumpy:
     def __init__(self, particles, log_weights):
         self._particles = np.asarray(particles)
         self._log_weights = np.asarray(log_weights)

@@ -10,7 +10,7 @@ from tensorflow_probability import distributions as tfd
 from partical_xspec.transitions.transition import Transition
 
 
-class TransitionLocalLinearTrend(Transition):
+class LocalLinearTrend(Transition):
     """Local linear trend.
 
     Example:

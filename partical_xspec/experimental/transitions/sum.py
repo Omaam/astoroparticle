@@ -5,7 +5,7 @@ import tensorflow as tf
 from partical_xspec.transitions.transition import Transition
 
 
-class TransitionSum(Transition):
+class Sum(Transition):
     def __init__(self, coefficients, noise_covariance, dtype=tf.float32):
         raise NotImplementedError()
 
