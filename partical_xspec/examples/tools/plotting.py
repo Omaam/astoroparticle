@@ -16,7 +16,8 @@ def plot_and_save_particle_distribution(
         latent_labels=None,
         latents_true=None,
         particle_quantiles=None,
-        savepath=None):
+        savepath=None,
+        show=False):
     """Plot and save particle distributions.
     """
 
@@ -58,5 +59,8 @@ def plot_and_save_particle_distribution(
 
     if savepath is not None:
         plt.savefig(savepath, dpi=150)
-    plt.show()
+
+    if show:
+        plt.show()
+
     plt.close()

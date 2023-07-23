@@ -13,8 +13,29 @@ class Observation:
         self.default_xspec_bijector = default_xspec_bijector
         self.dtype = dtype
 
+        self.observation_function = None
+
     def get_function(self, latent_indicies=None):
-        return self._observation_function(latent_indicies)
+        """Get observation function."""
+        observation_function = self._observation_function(
+            latent_indicies)
+        self.observation_function = observation_function
+        return observation_function
+
+    def compute_observation_from_particle(self, particles):
+
+        observation_particles = []
+        for p in range(particles.shape[-2]):
+            observation_particle = []
+            for t in range(particles.shape[-3]):
+                self.xspec_model.setPars(*particles[t, p, :].tolist())
+                observation_particle.append(self.xspec_model.values(0))
+            observation_particles.append(observation_particle)
+
+        observation_particles = tf.convert_to_tensor(
+            observation_particles, dtype=self.dtype)
+
+        return observation_particles
 
     def _observation_function(self, latent_indicies=None):
 
