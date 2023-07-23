@@ -1,4 +1,4 @@
-"""Utility module.
+"""Example utilities.
 """
 import os
 
