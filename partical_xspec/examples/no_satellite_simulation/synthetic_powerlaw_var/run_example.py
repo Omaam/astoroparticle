@@ -102,7 +102,8 @@ def main():
         observed_values,
         initial_state_prior=tfd.MultivariateNormalDiag(
             scale_diag=[0.5, 0.5]),
-        num_particles=num_particles)
+        num_particles=num_particles,
+        seed=123)
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
 

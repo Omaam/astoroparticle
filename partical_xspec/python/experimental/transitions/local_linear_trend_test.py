@@ -4,7 +4,7 @@ import unittest
 
 import tensorflow as tf
 
-import partical_xspec.transition.local_linear_trend as llt
+import partical_xspec.python.transition.local_linear_trend as llt
 
 
 class TrendModelTest(unittest.TestCase):

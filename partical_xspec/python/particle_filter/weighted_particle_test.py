@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from partical_xspec.experimental.particle_filter.weighted_particle \
+from partical_xspec.python.experimental.particle_filter.weighted_particle \
     import WeightedParticleNumpy
 
 

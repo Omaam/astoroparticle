@@ -4,7 +4,7 @@ import math
 
 import tensorflow as tf
 
-from partical_xspec.transitions.vector_autoregressive \
+from partical_xspec.python.transitions.vector_autoregressive \
     import VectorAutoregressive
 
 

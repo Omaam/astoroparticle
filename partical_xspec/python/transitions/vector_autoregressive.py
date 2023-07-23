@@ -3,8 +3,8 @@
 from tensorflow_probability import distributions as tfd
 import tensorflow as tf
 
-from partical_xspec.transitions import util as trans_util
-from partical_xspec.transitions.transition import Transition
+from partical_xspec.python.transitions import util as trans_util
+from partical_xspec.python.transitions.transition import Transition
 
 
 class VectorAutoregressive(Transition):

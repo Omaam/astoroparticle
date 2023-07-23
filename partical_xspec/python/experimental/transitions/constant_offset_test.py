@@ -1,7 +1,7 @@
 """Constant offset test."""
 import tensorflow as tf
 
-from partical_xspec.transition.experimental.constant_offset \
+from partical_xspec.python.transition.experimental.constant_offset \
     import TransitionConstantOffset
 
 

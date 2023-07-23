@@ -7,7 +7,7 @@ TODO:
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
 
-from partical_xspec.transitions.transition import Transition
+from partical_xspec.python.transitions.transition import Transition
 
 
 class LocalLinearTrend(Transition):

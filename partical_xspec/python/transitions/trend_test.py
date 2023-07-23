@@ -5,7 +5,7 @@ import unittest
 import tensorflow as tf
 import numpy as np
 
-from partical_xspec.transition.trend import TransitionTrend
+from partical_xspec.python.transition.trend import TransitionTrend
 
 
 class TransitionTrendTest(unittest.TestCase):

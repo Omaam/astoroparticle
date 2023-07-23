@@ -2,7 +2,7 @@
 
 import tensorflow as tf
 
-from partical_xspec.transitions.transition import Transition
+from partical_xspec.python.transitions.transition import Transition
 
 
 class Sum(Transition):

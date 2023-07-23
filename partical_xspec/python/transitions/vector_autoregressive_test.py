@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 
 import partical_xspec as px
-import partical_xspec.transitions.util as trans_util
+import partical_xspec.python.transitions.util as trans_util
 
 
 class VectorAutoregressiveTest(unittest.TestCase):
