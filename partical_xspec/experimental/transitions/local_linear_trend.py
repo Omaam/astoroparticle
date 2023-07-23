@@ -33,7 +33,7 @@ class LocalLinearTrend(Transition):
         self.slope_scale = slope_scale
         self.dtype = dtype
 
-    def _transition_function(self):
+    def _get_function(self):
 
         operator = tf.constant([[1.0, 1.0], [0.0, 1.0]], dtype=self.dtype)
         transition_matrix = tf.linalg.LinearOperatorBlockDiag(

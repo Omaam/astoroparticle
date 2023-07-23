@@ -32,7 +32,7 @@ class VectorAutoregressive(Transition):
     def _default_latent_indicies(self):
         return tf.range(self.latent_size)
 
-    def _transition_function(self):
+    def _get_function(self):
 
         transition_matrix = self.transition_matrix
         transition_noise_cov_chol = self.transition_noise_cov_chol

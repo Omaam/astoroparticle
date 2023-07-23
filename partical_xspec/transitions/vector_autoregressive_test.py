@@ -43,7 +43,7 @@ class VectorAutoregressiveTest(unittest.TestCase):
             np.array([[0.01, 0.00],
                       [0.00, 0.01]]),
             dtype=dtype)
-        transition_fn = px.get_transition_function_var(
+        transition_fn = px.get_get_function_var(
             coefficients, noise_covariance)
 
         x = tf.constant([1.0, 1.0, 0.0, 0.0])

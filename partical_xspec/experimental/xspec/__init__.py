@@ -1,3 +1,3 @@
 """Experimental xspec managing library.
 """
-from partical_xspec.experiment.xspec.model import *
+from partical_xspec.experimental.xspec.model import *

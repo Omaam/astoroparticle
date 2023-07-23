@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import seaborn as sns
 
 import partical_xspec as px
 
@@ -43,7 +44,9 @@ def plot_and_save_xspec_param_observations(
     fig, ax = plt.subplots(3, sharex=True)
     ax[0].plot(times, xspec_param_ts[:, 0, 0])
     ax[1].plot(times, xspec_param_ts[:, 0, 1])
-    ax[2].plot(times, observations_ts[:, 0, :])
+    colors = sns.color_palette("Spectral", observations_ts.shape[2])
+    for i in range(observations_ts.shape[2]):
+        ax[2].plot(times, observations_ts[:, 0, i], color=colors[i])
 
     ax[1].set_yscale("log")
     ax[0].set_ylabel("diskbb.Tin")
@@ -67,7 +70,8 @@ def main():
     num_timesteps = 100
     times, xspec_param_ts = simulate_diskbb_parameters(num_timesteps)
 
-    px.xspec.set_energy(0.5, 5.0, 20)
+    px.xspec.set_energy(0.5, 10.0, 10)
+
     obseravtion_fn = px.get_observaton_function_xspec_poisson(
         "diskbb", 2, 1)
 

@@ -1,19 +1,20 @@
-"""Trial of the particle filter in TensorFlow Probability.
 """
-import sys
+"""
 import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-
 import tensorflow as tf
-import tensorflow_probability as tfp
 from tensorflow_probability import bijectors as tfb
 from tensorflow_probability import distributions as tfd
 
 import partical_xspec as px
+from partical_xspec import transitions as pxt
+from partical_xspec import observations as pxo
+
 import util
+
 
 sns.set_style("whitegrid")
 
@@ -61,6 +62,7 @@ def plot_and_save_particle_distribution_with_latents(
 
 
 def set_particle_numbers():
+    import sys
     try:
         if sys.argv[1] == "test":
             num_particles = 100
@@ -73,63 +75,36 @@ def main():
 
     px.xspec.set_energy(0.5, 10.0, 10)
 
-    num_particles = set_particle_numbers()
-
     dtype = tf.float32
-    order = 1
-    xspec_param_size = 2
 
-    blockwise_bijector = tfb.Blockwise(
-        bijectors=[tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
-                   tfb.Chain([tfb.Scale(10.0), tfb.Exp()])]
-    )
-
-    coefficients = np.tile(np.diag([0.1, 0.1]), (order, 1, 1))
-    noise_scales = np.array([0.3, 0.3])
-    transition_noise_cov = np.diag(
-        tf.convert_to_tensor(noise_scales**2, dtype=dtype))
-    var_trans = px.TransitionVectorAutoregressive(
-        coefficients, transition_noise_cov, dtype=dtype)
-
-    transition_fn = var_trans.transition_function
-
-    ids_latent = var_trans.default_using_latent_indicies
-    observation_fn = px.get_observaton_function_xspec_poisson(
-        "powerlaw", xspec_param_size, num_particles,
-        ids_latent, bijector=blockwise_bijector)
-
-    initial_state_prior = tfd.MultivariateNormalDiag(
-        loc=tf.repeat(0.1, order*xspec_param_size),
-        scale_diag=tf.repeat(0.01, order*xspec_param_size))
-
-    observations = tf.convert_to_tensor(
-        np.loadtxt("data/observations.txt"),
+    transition = pxt.VectorAutoregressive(
+        coefficients=[[[0.1, 0.0], [0.0, 0.1]]],
+        noise_covariance=tf.constant([[0.3, 0.0], [0.0, 0.3]])**2,
         dtype=dtype)
 
+    observation = pxo.Observation(
+        xspec_model_name="powerlaw",
+        noise_distribution=tfd.Poisson,
+        default_xspec_bijector=tfb.Blockwise([
+            tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
+            tfb.Chain([tfb.Scale(10.0), tfb.Exp()]),
+            ])
+    )
+
+    pf = px.ParticleFilter(transition, observation)
+
+    observed_values = tf.convert_to_tensor(
+        np.loadtxt("data/observations.txt"), dtype=dtype)
+    num_particles = set_particle_numbers()
+
     t0 = time.time()
-    particles, log_weights, _, log_lik =  \
-        tfp.experimental.mcmc.particle_filter(
-            observations,
-            initial_state_prior,
-            transition_fn,
-            observation_fn,
-            num_particles,
-            parallel_iterations=1,
-            seed=0
-        )
+    particles, log_weights = pf.sample(
+        observed_values,
+        initial_state_prior=tfd.MultivariateNormalDiag(
+            scale_diag=[0.5, 0.5]),
+        num_particles=num_particles)
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
-
-    particles_bijectored = blockwise_bijector.forward(
-        particles[..., ids_latent])
-
-    # import pickle
-    # with open(".cache/bijector.pkl", "wb") as f:
-    #     pickle.dump(blockwise_bijector, f)
-
-    # np.save(".cache/particles", particles)
-    # np.save(".cache/log_weights", log_weights)
-    # np.save(".cache/log_likelyhood", log_lik)
 
     latents = np.loadtxt("data/latents.txt")
     particle_quantiles = [[0.160, 0.840], [0.025, 0.975], [0.001, 0.999]]
@@ -137,13 +112,13 @@ def main():
     savepath = util.join_and_create_directory(
         ".cache", "figs", "curve_particle_filtered.png")
     plot_and_save_particle_distribution_with_latents(
-        particles_bijectored, latents,
+        particles, latents,
         particle_quantiles=particle_quantiles,
         savepath=savepath)
 
     savepath = util.join_and_create_directory(
         ".cache", "figs", "curve_particle_smoothed.png")
-    particle_obj = px.ParticleNumpy(particles_bijectored, log_weights)
+    particle_obj = px.WeightedParticleNumpy(particles, log_weights)
     smoothed_particles = particle_obj.smooth_lag_fixed(20)
     plot_and_save_particle_distribution_with_latents(
         smoothed_particles, latents,

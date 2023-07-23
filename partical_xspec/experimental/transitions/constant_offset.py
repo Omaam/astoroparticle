@@ -24,7 +24,7 @@ class ConstantOffset(Transition):
         latent_indicies = tf.range(self.num_latents)
         return latent_indicies
 
-    def _transition_function(self):
+    def _get_function(self):
         scale_diag = tf.zeros(self.num_latents, dtype=self.dtype)
 
         def _transition_fn(i, x):
