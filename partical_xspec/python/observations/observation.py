@@ -5,15 +5,50 @@ from tensorflow_probability import distributions as tfd
 
 
 class Observation:
+    """Base class for observation models.
+    """
+
     def __init__(self, xspec_model_name, noise_distribution,
-                 default_xspec_bijector=None, dtype=tf.float32):
+                 xspec_bijector=None, dtype=tf.float32):
+        """Construct a specification for an observation model.
+
+        Args:
+            xspec_model_name: The name of xspec name.
+            noise_distrubuion: An instance of `tf.distributions` with
+                shape of the size of xspec parameters.
+            xspec_bijector: A bijector for parameters casting to xspec.
+                This enables to constrain xspec parameter space.
+            dtype: dtype used computation.
+        """
 
         self.xspec_model = xspec.Model(xspec_model_name)
         self.noise_distribution = noise_distribution
-        self.default_xspec_bijector = default_xspec_bijector
+        self.xspec_bijector = xspec_bijector
         self.dtype = dtype
 
         self.observation_function = None
+
+    def compute_observation(self, particles):
+        """Compute approximate observation."""
+        observation_particles = []
+        for p in range(particles.shape[-2]):
+            particle_flux = self._compute_xspec_flux(
+                particles[:, p, :])
+            observation_particles.append(particle_flux)
+
+        observation_particles = tf.convert_to_tensor(
+            observation_particles, dtype=self.dtype)
+        return observation_particles
+
+    def _compute_xspec_flux(self, x):
+        """Compute xspec flux."""
+        particle_flux = []
+        for i in range(x.shape[-2]):
+            self.xspec_model.setPars(*x[i].tolist())
+            particle_flux.append(self.xspec_model.values(0))
+        particle_flux = tf.convert_to_tensor(
+            particle_flux, dtype=self.dtype)
+        return particle_flux
 
     def get_function(self, latent_indicies=None):
         """Get observation function."""
@@ -22,38 +57,17 @@ class Observation:
         self.observation_function = observation_function
         return observation_function
 
-    def compute_observation_from_particle(self, particles):
-
-        observation_particles = []
-        for p in range(particles.shape[-2]):
-            observation_particle = []
-            for t in range(particles.shape[-3]):
-                self.xspec_model.setPars(*particles[t, p, :].tolist())
-                observation_particle.append(self.xspec_model.values(0))
-            observation_particles.append(observation_particle)
-
-        observation_particles = tf.convert_to_tensor(
-            observation_particles, dtype=self.dtype)
-
-        return observation_particles
-
     def _observation_function(self, latent_indicies=None):
-
+        """Return observation function."""
         def _observation_fn(step, x):
 
             if latent_indicies is not None:
                 x = tf.gather(x, latent_indicies, axis=-1)
 
-            if self.default_xspec_bijector is not None:
-                x = self.default_xspec_bijector.forward(x)
+            if self.xspec_bijector is not None:
+                x = self.xspec_bijector.forward(x)
 
-            particle_flux = []
-            for i in range(x.shape[-2]):
-                self.xspec_model.setPars(*x[i].tolist())
-                particle_flux.append(self.xspec_model.values(0))
-            particle_flux = tf.convert_to_tensor(
-                particle_flux, dtype=self.dtype)
-
+            particle_flux = self._compute_xspec_flux(x)
             observation_dist = tfd.Independent(
                 self.noise_distribution(particle_flux),
                 reinterpreted_batch_ndims=1)

@@ -22,7 +22,7 @@ class PowerlawGauss(Observation):
         super(PowerlawPoisson, self).__init__(
             xspec_model_name="powerlaw",
             noise_distribution=tfd.Gauss,
-            default_xspec_bijector=xspec_bijector,
+            xspec_bijector=xspec_bijector,
             dtype=dtype
         )
 
@@ -42,6 +42,6 @@ class PowerlawPoisson(Observation):
         super(PowerlawPoisson, self).__init__(
             xspec_model_name="powerlaw",
             noise_distribution=tfd.Poisson,
-            default_xspec_bijector=xspec_bijector,
+            xspec_bijector=xspec_bijector,
             dtype=dtype
         )

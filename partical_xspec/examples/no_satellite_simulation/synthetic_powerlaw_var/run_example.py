@@ -74,10 +74,9 @@ def main():
         latents_true=latents,
         particle_quantiles=particle_quantiles,
         savepath=savepath,
-        show=False)
+        show=True)
 
-    partical_observaiton = observation.compute_observation_from_particle(
-        particles)
+    partical_observaiton = observation.compute_observation(particles)
 
     # TODO: Make function for plotting particle approximated distributions.
     import matplotlib.pyplot as plt

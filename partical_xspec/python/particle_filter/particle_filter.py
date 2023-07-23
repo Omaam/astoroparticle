@@ -38,7 +38,7 @@ class ParticleFilter:
                 seed=seed
             )
 
-        particles = self.observation.default_xspec_bijector.forward(
+        particles = self.observation.xspec_bijector.forward(
             particles[..., transition.default_latent_indicies])
 
         return particles, log_weights
