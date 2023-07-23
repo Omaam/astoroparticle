@@ -3,13 +3,16 @@ import xspec
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
 
+from partical_xspec.python.xspec.settings import set_energy
+
 
 class Observation:
     """Base class for observation models.
     """
 
-    def __init__(self, xspec_model_name, noise_distribution,
-                 xspec_bijector=None, dtype=tf.float32):
+    def __init__(self, xspec_model_name, observation_size,
+                 noise_distribution, xspec_bijector=None,
+                 energy_ranges_kev=None, dtype=tf.float32):
         """Construct a specification for an observation model.
 
         Args:
@@ -22,11 +25,14 @@ class Observation:
         """
 
         self.xspec_model = xspec.Model(xspec_model_name)
+        self.observation_size = observation_size
         self.noise_distribution = noise_distribution
         self.xspec_bijector = xspec_bijector
         self.dtype = dtype
 
         self.observation_function = None
+
+        self._set_energy_ranges(observation_size, energy_ranges_kev)
 
     def compute_observation(self, particles):
         """Compute approximate observation."""
@@ -75,3 +81,11 @@ class Observation:
             return observation_dist
 
         return _observation_fn
+
+    def _set_energy_ranges(self, observation_size, energy_ranges_kev):
+        if energy_ranges_kev is None:
+            energy_ranges_kev = ["", ""]
+        if len(energy_ranges_kev) != 2:
+            raise ValueError("`len(energy_ranges_kev)` must be 2.")
+        set_energy(energy_ranges_kev[0], energy_ranges_kev[1],
+                   self.observation_size)

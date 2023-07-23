@@ -11,7 +11,11 @@ class PowerlawGauss(Observation):
     """Power law model of xspec observed in Gauss distribution.
     """
 
-    def __init__(self, xspec_bijector=None, dtype=tf.float32):
+    def __init__(self,
+                 observation_size,
+                 xspec_bijector=None,
+                 energy_ranges_kev=None,
+                 dtype=tf.float32):
 
         if xspec_bijector is None:
             xspec_bijector = tfb.Blockwise([
@@ -21,8 +25,10 @@ class PowerlawGauss(Observation):
 
         super(PowerlawPoisson, self).__init__(
             xspec_model_name="powerlaw",
+            observation_size=observation_size,
             noise_distribution=tfd.Gauss,
             xspec_bijector=xspec_bijector,
+            energy_ranges_kev=energy_ranges_kev,
             dtype=dtype
         )
 
@@ -31,7 +37,11 @@ class PowerlawPoisson(Observation):
     """Power law model of xspec observed in Poisson distribution.
     """
 
-    def __init__(self, xspec_bijector=None, dtype=tf.float32):
+    def __init__(self,
+                 observation_size,
+                 xspec_bijector=None,
+                 energy_ranges_kev=None,
+                 dtype=tf.float32):
 
         if xspec_bijector is None:
             xspec_bijector = tfb.Blockwise([
@@ -41,7 +51,9 @@ class PowerlawPoisson(Observation):
 
         super(PowerlawPoisson, self).__init__(
             xspec_model_name="powerlaw",
+            observation_size=observation_size,
             noise_distribution=tfd.Poisson,
             xspec_bijector=xspec_bijector,
+            energy_ranges_kev=energy_ranges_kev,
             dtype=dtype
         )

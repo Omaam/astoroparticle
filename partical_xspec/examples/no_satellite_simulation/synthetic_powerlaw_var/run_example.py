@@ -28,8 +28,6 @@ def set_particle_numbers():
 
 def main():
 
-    px.xspec.set_energy(0.5, 10.0, 10)
-
     dtype = tf.float32
 
     # Load observations and true latents.
@@ -43,10 +41,13 @@ def main():
         dtype=dtype)
 
     observation = pxo.PowerlawPoisson(
+        observation_size=10,
+        energy_ranges_kev=[0.5, 10.0],
         xspec_bijector=tfb.Blockwise([
             tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
             tfb.Chain([tfb.Scale(10.0), tfb.Exp()]),
         ])
+
     )
 
     pf = px.ParticleFilter(transition, observation)
