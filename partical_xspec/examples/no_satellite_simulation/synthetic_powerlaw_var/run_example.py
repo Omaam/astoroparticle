@@ -8,8 +8,8 @@ from tensorflow_probability import bijectors as tfb
 from tensorflow_probability import distributions as tfd
 
 import partical_xspec as px
-from partical_xspec import transitions as pxt
 from partical_xspec import observations as pxo
+from partical_xspec import transitions as pxt
 from partical_xspec.examples import tools as extools
 
 
@@ -42,13 +42,11 @@ def main():
         noise_covariance=tf.constant([[0.3, 0.0], [0.0, 0.3]])**2,
         dtype=dtype)
 
-    observation = pxo.Observation(
-        xspec_model_name="powerlaw",
-        noise_distribution=tfd.Poisson,
-        default_xspec_bijector=tfb.Blockwise([
+    observation = pxo.PowerlawPoisson(
+        xspec_bijector=tfb.Blockwise([
             tfb.Chain([tfb.Scale(1.0), tfb.Exp()]),
             tfb.Chain([tfb.Scale(10.0), tfb.Exp()]),
-            ])
+        ])
     )
 
     pf = px.ParticleFilter(transition, observation)
