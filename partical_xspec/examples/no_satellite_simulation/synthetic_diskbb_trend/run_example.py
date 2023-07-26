@@ -28,8 +28,6 @@ def set_particle_numbers():
 
 def main():
 
-    px.xspec.set_energy(0.5, 10.0, 10)
-
     dtype = tf.float32
 
     # Load observations and true latents.
@@ -43,11 +41,13 @@ def main():
 
     observation = pxo.Observation(
         xspec_model_name="diskbb",
+        observation_size=10,
         noise_distribution=tfd.Poisson,
-        default_xspec_bijector=tfb.Blockwise([
+        xspec_bijector=tfb.Blockwise([
             tfb.Chain([tfb.Exp()]),
             tfb.Chain([tfb.Exp()]),
-            ])
+            ]),
+        energy_ranges_kev=[0.5, 10.0]
     )
 
     pf = px.ParticleFilter(transition, observation)
@@ -88,7 +88,8 @@ def main():
         latent_labels=xspec_param_names,
         latents_true=latents,
         particle_quantiles=particle_quantiles,
-        savepath=savepath)
+        savepath=savepath,
+        show=True)
 
 
 if __name__ == "__main__":
