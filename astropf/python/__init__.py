@@ -1,7 +1,6 @@
 """ParticalXspec Framework.
 """
 from astropf.python import experimental
-from astropf.python import mcmc
 from astropf.python import observations
 from astropf.python import particle_filter
 from astropf.python import transitions

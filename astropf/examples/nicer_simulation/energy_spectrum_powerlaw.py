@@ -10,17 +10,17 @@ from astropf import experimental as apfe
 def main():
 
     # The number of group edges for nicerrmf is 3451.
-    observation = px.observations.Observation(
+    observation = apf.observations.Observation(
         "powerlaw", 3451, tfd.Poisson,
         energy_ranges_kev=[0.1, 20.])
 
     model_flux = observation.compute_observation(
         tf.convert_to_tensor([[[1.0, 1.0]]]))[0]
 
-    response = pxe.observations.ResponseNicerXti()
+    response = apfe.observations.ResponseNicerXti()
 
     # The number of channel edges for nicerarf is 1495.
-    rebin = pxe.observations.Rebin(
+    rebin = apfe.observations.Rebin(
         energy_splits_old=tf.linspace(0.1, 20.0, 1495),
         energy_splits_new=tf.linspace(0.5, 10.0, 11))
 
