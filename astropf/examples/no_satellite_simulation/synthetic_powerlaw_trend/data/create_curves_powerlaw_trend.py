@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 import seaborn as sns
 
-import astropf as px
+import astropf as apf
 
 sns.set_context("talk")
 sns.set_style("whitegrid")

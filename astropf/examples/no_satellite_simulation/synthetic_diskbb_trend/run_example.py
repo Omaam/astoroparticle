@@ -7,9 +7,9 @@ import tensorflow as tf
 from tensorflow_probability import bijectors as tfb
 from tensorflow_probability import distributions as tfd
 
-import astropf as px
-from astropf import transitions as pxt
-from astropf import observations as pxo
+import astropf as apf
+from astropf import transitions as apft
+from astropf import observations as apfo
 from astropf.examples import tools as extools
 
 

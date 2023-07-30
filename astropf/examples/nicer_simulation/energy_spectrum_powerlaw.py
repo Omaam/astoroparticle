@@ -3,8 +3,8 @@
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
 
-import astropf as px
-from astropf import experimental as pxe
+import astropf as apf
+from astropf import experimental as apfe
 
 
 def main():

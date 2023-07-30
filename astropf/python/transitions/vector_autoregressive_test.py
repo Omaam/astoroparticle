@@ -5,7 +5,6 @@ import unittest
 import numpy as np
 import tensorflow as tf
 
-import astropf as px
 import astropf.python.transitions.util as trans_util
 
 

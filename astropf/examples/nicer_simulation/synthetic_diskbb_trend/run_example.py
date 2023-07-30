@@ -12,7 +12,7 @@ import tensorflow_probability as tfp
 from tensorflow_probability import bijectors as tfb
 from tensorflow_probability import distributions as tfd
 
-import astropf as px
+import astropf as apf
 
 sns.set_style("whitegrid")
 

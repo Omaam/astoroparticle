@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
-import astropf as px
+import astropf as apf
 
 
 def simulate_diskbb_parameters(num_timesteps):

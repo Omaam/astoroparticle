@@ -14,9 +14,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
 
-import astropf as px
-from astropf import observations as pxo
-from astropf import transitions as pxt
+import astropf as apf
+from astropf import observations as apfo
+from astropf import transitions as apft
 
 
 dtype = tf.float32
