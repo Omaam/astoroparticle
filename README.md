@@ -1,2 +1,2 @@
-# ParticalXspec
-Framework for spectral and timing analysis with particle filter.
+# AstroPF
+Particle-filter-based spectrum-timing simultaneous modeling framework.
