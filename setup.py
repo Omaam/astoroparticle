@@ -4,7 +4,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 setup(
-    name="AstroPF",
+    name="astroparticle",
     version="0.0.1",
     description="Xspec inference with particle filter",
     author="Tomoki Omama",
