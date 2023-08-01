@@ -4,20 +4,20 @@ import os
 
 import tensorflow as tf
 
+from astroparticle.python.experimental.observations.xray_spectrum.core \
+    import XraySpectrum
 from astroparticle.python.experimental.observations.xray_spectrum.response \
     import AncillaryResponseModel
-from astroparticle.python.experimental.observations.xray_spectrum.response \
-    import DetectorResponseModel
 from astroparticle.python.experimental.observations.xray_spectrum.response \
     import ResponseMatrixModel
 
 
-class ResponseNewtonDetectorName(DetectorResponseModel):
+class ResponseNewtonDetectorName(XraySpectrum):
     def __init__(self):
         raise NotImplementedError()
 
 
-class ResponseNicerXti(DetectorResponseModel):
+class ResponseNicerXti(XraySpectrum):
 
     def __init__(self, dtype=tf.float32):
         self.response_matrix = ResponseMatrixModel(
@@ -30,33 +30,30 @@ class ResponseNicerXti(DetectorResponseModel):
                 os.path.dirname(__file__),
                 "data/nixtiaveonaxis20170601v005.arf")
         )
-        self.dtype = dtype
+        [
+         self._energy_intervals_input,
+         self._energy_intervals_output
+        ] = [
+         self.ancillary_response._energy_intervals_input,
+         self.response_matrix._energy_intervals_output
+        ]
 
     def _forward(self, x):
         y = self.ancillary_response.forward(x)
         y = self.response_matrix.forward(y)
         return y
 
-    @property
-    def _response(self):
-        return [self.response_matrix.response,
-                self.ancillary_response.response]
 
-    @property
-    def _energy_intervals_input(self):
-        return self.response_matrix.energy_intervals_input
-
-
-class ResponseNustarDetectorName(DetectorResponseModel):
+class ResponseNustarDetectorName(XraySpectrum):
     def __init__(self):
         raise NotImplementedError()
 
 
-class ResponseRxteDetectorName(DetectorResponseModel):
+class ResponseRxteDetectorName(XraySpectrum):
     def __init__(self):
         raise NotImplementedError()
 
 
-class ResponseXrismResolve(DetectorResponseModel):
+class ResponseXrismResolve(XraySpectrum):
     def __init__(self):
         raise NotImplementedError()

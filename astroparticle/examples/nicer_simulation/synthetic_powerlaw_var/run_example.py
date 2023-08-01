@@ -27,7 +27,7 @@ def set_particle_numbers():
     return num_particles
 
 
-class PhysicalModel:
+class MyPhysicalModel:
 
     def __init__(self, energy_intervals, x):
         x = tf.unstack(x, axis=1)
@@ -58,24 +58,31 @@ def main():
          )
 
     # Observation part.
-    num_flux_model = 3451
-    num_flux_nicer = 1501
-    num_flux_output = 10
+    num_energy_model = 3451
 
-    rebin = ape.observations.Rebin(
-        energy_splits_old=tf.linspace(0.1, 20., num_flux_nicer+1),
-        energy_splits_new=tf.linspace(0.5, 10., num_flux_output+1))
+    num_energy_obs = 10
+    energy_range_obs = [0.5, 10.]
+    energy_edges_obs = tf.linspace(energy_range_obs[0], energy_range_obs[1],
+                                   num_energy_obs+1)
+    energy_interval_obs = tf.concat(
+        [energy_edges_obs[:-1][:, tf.newaxis],
+         energy_edges_obs[1:][:, tf.newaxis]],
+        axis=-1)
+
     response = ap.experimental.observations.ResponseNicerXti()
-    energy_intervals_model = response.energy_intervals_input
+    rebin = ape.observations.Rebin(
+        energy_intervals_input=response.energy_intervals_output,
+        energy_intervals_output=energy_interval_obs)
 
     @tf.function(jit_compile=False, autograph=False)
     def observation_fn(step, xray_spectrum_params):
 
         xray_spectrum_params = xray_spectrum_bijector(xray_spectrum_params)
-        physical_model = PhysicalModel(energy_intervals_model,
-                                       xray_spectrum_params)
+        physical_model = MyPhysicalModel(
+            response.energy_intervals_input,
+            xray_spectrum_params)
 
-        flux = tf.zeros(num_flux_model, dtype=dtype)
+        flux = tf.zeros(num_energy_model, dtype=dtype)
         flux = physical_model(flux)
         flux = response(flux)
         flux = rebin(flux)

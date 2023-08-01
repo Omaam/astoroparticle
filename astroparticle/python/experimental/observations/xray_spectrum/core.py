@@ -4,8 +4,11 @@ import tensorflow as tf
 
 
 class XraySpectrum(tf.Module):
-    def __init__(self, dtype=tf.float32):
-        self.dtype = dtype
+    def __init__(self,
+                 energy_intervals_input,
+                 energy_intervals_output):
+        self._energy_intervals_input = energy_intervals_input
+        self._energy_intervals_output = energy_intervals_output
 
     def __call__(self, value):
         return self.forward(value)
@@ -21,15 +24,6 @@ class XraySpectrum(tf.Module):
     def energy_intervals_input(self):
         return self._energy_intervals_input
 
-    def _energy_intervals_input(self):
-        raise NotImplementedError(
-            "energy_intervals_input not implemented.")
-
     @property
     def energy_intervals_output(self):
         return self._energy_intervals_output
-
-    @property
-    def _energy_intervals_output(self):
-        raise NotImplementedError(
-            "energy_intervals_output not implemented.")

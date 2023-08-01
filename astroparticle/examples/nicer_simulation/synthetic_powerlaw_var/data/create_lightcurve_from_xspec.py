@@ -91,22 +91,28 @@ def main():
 
     times = np.arange(num_timesteps)
 
-    energy_splits_model = tf.linspace(0.1, 20.0, 3451+1)
-    energy_splits_nicer = tf.linspace(0.1, 20.0, 1501+1)
-    energy_splits_output = tf.linspace(energy_kev_start, energy_kev_end,
-                                       num_bands+1)
+    energy_edges_model = tf.linspace(0.1, 20.0, 3451+1)
+    energy_edges_nicer = tf.linspace(0.1, 20.0, 1501+1)
+    energy_edges_obs = tf.linspace(energy_kev_start, energy_kev_end,
+                                   num_bands+1)
 
-    energy_edges_model = tf.stack([energy_splits_model[:-1],
-                                   energy_splits_model[1:]],
-                                  axis=1)
+    energy_intervals_model = tf.stack([energy_edges_model[:-1],
+                                       energy_edges_model[1:]],
+                                      axis=1)
+    energy_intervals_nicer = tf.stack([energy_edges_nicer[:-1],
+                                       energy_edges_nicer[1:]],
+                                      axis=1)
+    energy_intervals_obs = tf.stack([energy_edges_obs[:-1],
+                                     energy_edges_obs[1:]],
+                                    axis=1)
 
     flux = tf.zeros([num_timesteps, 3451], dtype=tf.float32)
     flux = ape.observations.PowerLaw(
-            energy_edges_model, params[:, 0], params[:, 1])(flux)
+            energy_intervals_model, params[:, 0], params[:, 1])(flux)
     flux = ape.observations.ResponseNicerXti()(flux)
     flux = ape.observations.Rebin(
-        energy_splits_old=energy_splits_nicer,
-        energy_splits_new=energy_splits_output)(flux)
+        energy_intervals_nicer,
+        energy_intervals_obs)(flux)
     flux = flux + tf.random.normal([num_timesteps, num_bands], 0.0, 10.)
     time_spectra = flux
 
@@ -123,7 +129,7 @@ def main():
         times, params, time_spectra, savename=save_curve_path,
         show=True)
 
-    energies = (energy_splits_output[1:] + energy_splits_output[:-1]) / 2
+    energies = tf.reduce_mean(energy_intervals_obs, axis=1)
     save_spectra_path = util.join_and_create_directory(
         "..", ".cache", "figs", "observed_energy_spectra.png")
     plot_and_save_energyspectra(
