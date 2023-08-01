@@ -4,9 +4,7 @@ import tensorflow as tf
 
 
 class XraySpectrum(tf.Module):
-    def __init__(self, energy_edges, num_params, dtype=tf.float32):
-        self._energy_edges = energy_edges
-        self.num_params = num_params
+    def __init__(self, dtype=tf.float32):
         self.dtype = dtype
 
     def __call__(self, value):
@@ -20,13 +18,18 @@ class XraySpectrum(tf.Module):
         return self._forward(flux)
 
     @property
-    def energy_edges(self):
-        return self._energy_edges
+    def energy_intervals_input(self):
+        return self._energy_intervals_input
+
+    def _energy_intervals_input(self):
+        raise NotImplementedError(
+            "energy_intervals_input not implemented.")
 
     @property
-    def _energies(self):
-        raise NotImplementedError("energies not implemented.")
+    def energy_intervals_output(self):
+        return self._energy_intervals_output
 
     @property
-    def energies(self):
-        return self._energies
+    def _energy_intervals_output(self):
+        raise NotImplementedError(
+            "energy_intervals_output not implemented.")

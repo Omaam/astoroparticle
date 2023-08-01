@@ -42,6 +42,7 @@ class VectorAutoregressive(Transition):
 
         def _transition_fn(_, x):
             x = tf.convert_to_tensor(x[tf.newaxis, :], self.dtype)
+            # TODO: Use `tf.matmul()`, instead of '@'.
             fx = x @ transition_matrix_transpose
             transition_dist = tfd.MultivariateNormalTriL(
                 loc=tf.squeeze(fx, axis=0),

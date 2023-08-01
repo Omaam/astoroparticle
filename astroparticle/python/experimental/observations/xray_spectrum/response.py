@@ -1,9 +1,7 @@
 """Experiment for response function.
-
-TODO:
-    * use `tf.name_scope`.
 """
-from astroparticle.python.experimental.observations.xray_spectrum.core import XraySpectrum
+from astroparticle.python.experimental.observations.xray_spectrum.core \
+    import XraySpectrum
 import tensorflow as tf
 from astropy.io import fits
 
@@ -16,6 +14,11 @@ class DetectorResponseModel(XraySpectrum):
     def _get_value_from_file(self, idx_hdul, column_name):
         with fits.open(self.filepath) as hdul:
             value = hdul[idx_hdul].data.field(column_name)
+        return value
+
+    def _get_header_from_file(self, idx_hdul, name):
+        with fits.open(self.filepath) as hdul:
+            value = hdul[idx_hdul].header[name]
         return value
 
     def _inverse(self, x):
@@ -48,11 +51,17 @@ class AncillaryResponseModel(DetectorResponseModel):
         return ancillary_response
 
     @property
-    def _energy_edges(self):
+    def _energy_intervals_input(self):
         return tf.concat(
-            [self._get_value_from_file(1, "ENERG_LO")[:, tf.newaxis],
-             self._get_value_from_file(1, "ENERG_HI")[:, tf.newaxis]],
+            [tf.convert_to_tensor(self._get_value_from_file(1, "ENERG_LO"),
+                                  dtype=self.dtype)[:, tf.newaxis],
+             tf.convert_to_tensor(self._get_value_from_file(1, "ENERG_HI"),
+                                  dtype=self.dtype)[:, tf.newaxis]],
             axis=1)
+
+    @property
+    def _energy_intervals_output(self):
+        return self._energy_intervals_input
 
     @property
     def _response(self):
@@ -67,33 +76,57 @@ class ResponseMatrixModel(DetectorResponseModel):
                 filepath=filepath,
                 dtype=dtype)
 
+            self.num_channel_output = tf.cast(
+                self._get_header_from_file(2, "DETCHANS"),
+                dtype=tf.int32)
             self._response_matrix = self._get_response_matrix()
-            self.num_groups = self._response_matrix.shape[0]
-            self.num_channels = self._response_matrix.shape[1]
 
     def _forward(self, x):
-        return tf.matmul(x, self._response)
+        return tf.matmul(x, self.response)
 
     def _get_response_matrix(self):
-        response_matrix = tf.ragged.constant(
-            self._get_value_from_file(2, "MATRIX"),
-            dtype=self.dtype
-        ).to_tensor()
-        return response_matrix
+        first_channels = tf.convert_to_tensor(
+            self._get_value_from_file(2, "F_CHAN"), dtype=tf.int32)
 
-    @property
-    def _energy_edges(self):
-        energy_lows = tf.convert_to_tensor(
-            self._get_value_from_file(2, "ENERG_LO")[:, tf.newaxis],
-            dtype=self.dtype)
-        energy_highs = tf.convert_to_tensor(
-            self._get_value_from_file(2, "ENERG_HI")[:, tf.newaxis],
-            dtype=self.dtype)
-        return tf.concat([energy_lows, energy_highs], axis=1)
+        raw_response_matrix = tf.ragged.constant(
+            self._get_value_from_file(2, "MATRIX"),
+            dtype=self.dtype).to_tensor()
+        num_left_paddings = tf.subtract(self.num_channel_output,
+                                        raw_response_matrix.shape[-1])
+        padded_response_matrix = tf.pad(
+            raw_response_matrix,
+            paddings=tf.convert_to_tensor([[0, 0], [0, num_left_paddings]],
+                                          dtype=tf.int32)
+        )
+
+        response_matrix = tf.map_fn(
+            lambda x: tf.roll(x[0], x[1], axis=-1, name="roll"),
+            elems=[padded_response_matrix, first_channels],
+            fn_output_signature=padded_response_matrix.dtype
+        )
+        return response_matrix
 
     @property
     def _response(self):
         return self._response_matrix
+
+    @property
+    def _energy_intervals_input(self):
+        return tf.concat(
+            [tf.convert_to_tensor(self._get_value_from_file(2, "ENERG_LO"),
+                                  dtype=self.dtype)[:, tf.newaxis],
+             tf.convert_to_tensor(self._get_value_from_file(2, "ENERG_HI"),
+                                  dtype=self.dtype)[:, tf.newaxis]],
+            axis=1)
+
+    @property
+    def _energy_intervals_output(self):
+        return tf.concat(
+            [tf.convert_to_tensor(self._get_value_from_file(1, "E_MIN"),
+                                  dtype=self.dtype)[:, tf.newaxis],
+             tf.convert_to_tensor(self._get_value_from_file(1, "E_MAX"),
+                                  dtype=self.dtype)[:, tf.newaxis]],
+            axis=1)
 
 
 class CustumResponseModel(DetectorResponseModel):
@@ -115,8 +148,8 @@ class CustumResponseModel(DetectorResponseModel):
                 self.ancillary_response.response]
 
     @property
-    def _energy_edges(self):
-        return self.response_matrix.energy_edges
+    def _energy_intervals(self):
+        return self.response_matrix.energy_intervals
 
 
 def main():

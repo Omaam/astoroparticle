@@ -4,9 +4,12 @@ import os
 
 import tensorflow as tf
 
-from astroparticle.python.experimental.observations.xray_spectrum.response import AncillaryResponseModel
-from astroparticle.python.experimental.observations.xray_spectrum.response import DetectorResponseModel
-from astroparticle.python.experimental.observations.xray_spectrum.response import ResponseMatrixModel
+from astroparticle.python.experimental.observations.xray_spectrum.response \
+    import AncillaryResponseModel
+from astroparticle.python.experimental.observations.xray_spectrum.response \
+    import DetectorResponseModel
+from astroparticle.python.experimental.observations.xray_spectrum.response \
+    import ResponseMatrixModel
 
 
 class ResponseNewtonDetectorName(DetectorResponseModel):
@@ -40,8 +43,8 @@ class ResponseNicerXti(DetectorResponseModel):
                 self.ancillary_response.response]
 
     @property
-    def _energy_edges(self):
-        return self.response_matrix.energy_edges
+    def _energy_intervals_input(self):
+        return self.response_matrix.energy_intervals_input
 
 
 class ResponseNustarDetectorName(DetectorResponseModel):

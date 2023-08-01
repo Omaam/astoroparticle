@@ -1,0 +1,10 @@
+それぞれのカラムの説明
+```bash
+TTYPE4  = 'F_CHAN  '           / First channel in each subset
+TTYPE5  = 'N_CHAN  '           / Number chans in each subset
+TTYPE6  = 'MATRIX  '           / (non-zero) Matrix elements
+```
+* MATRIX にはその行の ENERG_LOW, ENERG_HIGH に対応する1次元配列が入っている．
+  0の部分は省略されており，MATRIXの何処に位置するかは N_CHAN, F_CHAN から取得できそう
+* F_CHAN には MATRIX に入っている配列が実際の matrix の何番目の ch に相当するかが格納されている
+* N_CHAN には MATRIX に入っている配列の size が格納されている
