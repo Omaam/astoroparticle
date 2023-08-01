@@ -2,7 +2,7 @@
 """
 import tensorflow as tf
 
-from core import XraySpectrum
+from.xray_spectrum import XraySpectrum
 from components.powerlaw import PowerLaw
 from response_satellite import ResponseNicerXti
 from binning import Rebin

@@ -1,7 +1,7 @@
 """Experiment for response function.
 """
-from astroparticle.python.experimental.observations.xray_spectrum.core \
-    import XraySpectrum
+from astroparticle.python.experimental.observations.\
+    xray_spectrum.xray_spectrum import XraySpectrum
 import tensorflow as tf
 from astropy.io import fits
 

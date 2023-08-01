@@ -2,8 +2,8 @@
 """
 import tensorflow as tf
 
-from astroparticle.python.experimental.observations.xray_spectrum.core \
-    import XraySpectrum
+from astroparticle.python.experimental.observations.\
+    xray_spectrum.xray_spectrum import XraySpectrum
 
 
 class PowerLaw(XraySpectrum):

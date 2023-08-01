@@ -3,8 +3,8 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from astroparticle.python.experimental.observations.xray_spectrum.core \
-    import XraySpectrum
+from astroparticle.python.experimental.observations.\
+    xray_spectrum.xray_spectrum import XraySpectrum
 
 
 class Rebin(XraySpectrum):
