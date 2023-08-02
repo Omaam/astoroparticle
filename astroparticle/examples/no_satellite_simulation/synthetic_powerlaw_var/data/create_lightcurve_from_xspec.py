@@ -98,7 +98,7 @@ def main():
         rate = np.random.poisson(flux)
         time_spectra[i] = rate
 
-    import util
+    from astroparticle.examples.tools import util
 
     savepath_latent = util.join_and_create_directory(
         "latents.txt")

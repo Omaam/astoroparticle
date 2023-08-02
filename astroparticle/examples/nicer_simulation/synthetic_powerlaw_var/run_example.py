@@ -55,11 +55,9 @@ def main():
     xray_spectrum_bijector = tfb.Blockwise(
             [tfb.Chain([tfb.Scale(1.), tfb.Exp()]),
              tfb.Chain([tfb.Scale(10.), tfb.Exp()])]
-         )
+    )
 
     # Observation part.
-    num_energy_model = 3451
-
     num_energy_obs = 10
     energy_range_obs = [0.5, 10.]
     energy_edges_obs = tf.linspace(energy_range_obs[0], energy_range_obs[1],
@@ -76,18 +74,23 @@ def main():
 
     @tf.function(jit_compile=False, autograph=False)
     def observation_fn(step, xray_spectrum_params):
-
-        xray_spectrum_params = xray_spectrum_bijector(xray_spectrum_params)
+        xray_spectrum_params = xray_spectrum_bijector.forward(
+            xray_spectrum_params)
         physical_model = MyPhysicalModel(
             response.energy_intervals_input,
             xray_spectrum_params)
 
-        flux = tf.zeros(num_energy_model, dtype=dtype)
+        flux = tf.zeros(response.energy_size_input, dtype=dtype)
         flux = physical_model(flux)
         flux = response(flux)
         flux = rebin(flux)
+
+        # Is it OK to use flux as scale? The true value is
+        # 10 for each band. However, if we give true value
+        # to scale, distribution converges into one value,
+        # meaning distribution approximation filed.
         observation_dist = tfd.Independent(
-            tfd.Normal(loc=flux, scale=10.),
+            tfd.Normal(loc=flux, scale=flux),
             reinterpreted_batch_ndims=1)
 
         return observation_dist
@@ -96,9 +99,9 @@ def main():
     num_particles = set_particle_numbers()
     [
      particle,
-     _,
-     log_lik,
-     _
+     log_weights,
+     parent_indices,
+     incremental_log_marginal_likelihood,
     ] = tfp.experimental.mcmc.particle_filter(
         observed_values,
         initial_state_prior=tfd.MultivariateNormalDiag(
@@ -106,11 +109,12 @@ def main():
         transition_fn=transition.get_function(),
         observation_fn=observation_fn,
         num_particles=num_particles,
+        parallel_iterations=1,
         seed=123)
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
 
-    particle = xray_spectrum_bijector(particle)
+    particle = xray_spectrum_bijector.forward(particle)
     latent_values = tf.convert_to_tensor(
         np.loadtxt("data/latents.txt"), dtype=dtype)
 

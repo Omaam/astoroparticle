@@ -27,3 +27,11 @@ class XraySpectrum(tf.Module):
     @property
     def energy_intervals_output(self):
         return self._energy_intervals_output
+
+    @property
+    def energy_size_input(self):
+        return self._energy_intervals_input.shape[0]
+
+    @property
+    def energy_size_output(self):
+        return self._energy_intervals_output.shape[0]

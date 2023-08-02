@@ -39,6 +39,3 @@ class PowerLaw(XraySpectrum):
             energy_centers, -photon_index[:, tf.newaxis])
 
         return flux
-
-    def _energy_intervals_input(self):
-        return self._energy_intervals_input

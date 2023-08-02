@@ -87,7 +87,7 @@ def main():
 
     params = generate_sample_varmodel()
     params = np.exp(params)
-    params = params * np.array([1.0, 10.0])
+    params = params * np.array([1.0, 10.])
 
     times = np.arange(num_timesteps)
 
