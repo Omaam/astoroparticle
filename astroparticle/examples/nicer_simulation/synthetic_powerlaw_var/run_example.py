@@ -125,7 +125,7 @@ def main():
         latent_labels=["powerlaw.photon_index", "powerlaw.normalization"],
         quantiles=[[0.025, 0.975], [0.001, 0.999]],
         savepath=".cache/figs/latent_values_particle.png",
-        show=True)
+        show=False)
 
     extools.plot_and_save_particle_observation(
         particle,
@@ -134,7 +134,7 @@ def main():
         quantiles=[[0.025, 0.975], [0.001, 0.999]],
         logy=True,
         savepath=".cache/figs/observation_values_particle.png",
-        show=True)
+        show=False)
 
 
 if __name__ == "__main__":

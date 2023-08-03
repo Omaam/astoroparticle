@@ -89,8 +89,9 @@ def plot_and_save_particle_observation(particles,
     num_timesteps = observation_particles.shape[-3]
 
     if figsize is None:
-        figsize = (7, 1*num_observation)
+        figsize = (7, num_observation)
 
+    print(figsize)
     fig, ax = plt.subplots(num_observation, sharex=True,
                            figsize=figsize,
                            constrained_layout=True)
@@ -115,4 +116,5 @@ def plot_and_save_particle_observation(particles,
         plt.savefig(savepath, dpi=150)
     if show:
         plt.show()
+    fig.align_ylabels()
     plt.close()
