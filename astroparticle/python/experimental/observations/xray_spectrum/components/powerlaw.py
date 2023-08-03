@@ -3,14 +3,14 @@
 import tensorflow as tf
 
 from astroparticle.python.experimental.observations.\
-    xray_spectrum.xray_spectrum import XraySpectrum
+    xray_spectrum.components.physical_component import PhysicalComponent
 
 
-class PowerLaw(XraySpectrum):
+class PowerLaw(PhysicalComponent):
     def __init__(self,
                  energy_intervals_input,
-                 photon_index,
-                 normalization,
+                 photon_index=1.0,
+                 normalization=1.0,
                  dtype=tf.float32, name="powerlaw"):
 
         with tf.name_scope(name) as name:
@@ -35,7 +35,12 @@ class PowerLaw(XraySpectrum):
         energy_centers = tf.reduce_mean(
             self.energy_intervals_input, axis=1)
 
-        flux = flux + normalization[:, tf.newaxis] * tf.math.pow(
-            energy_centers, -photon_index[:, tf.newaxis])
+        flux = flux + normalization[..., tf.newaxis] * tf.math.pow(
+            energy_centers, -photon_index[..., tf.newaxis])
 
         return flux
+
+    def _set_parameter(self, x):
+        x = tf.unstack(x, axis=-1)
+        self.photon_index = x[0]
+        self.normalization = x[1]

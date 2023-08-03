@@ -27,16 +27,18 @@ def set_particle_numbers():
     return num_particles
 
 
-class MyPhysicalModel:
+class MyPhysicalModel(ap.experimental.observations.PhysicalComponent):
 
-    def __init__(self, energy_intervals, x):
-        x = tf.unstack(x, axis=1)
+    def __init__(self, energy_intervals):
         self.powerlaw = ap.experimental.observations.PowerLaw(
-            energy_intervals, x[0], x[1])
+            energy_intervals)
 
     def __call__(self, flux):
         flux = self.powerlaw(flux)
         return flux
+
+    def _set_parameter(self, x):
+        self.powerlaw.set_parameter(x[:, :2])
 
 
 def main():
@@ -71,14 +73,14 @@ def main():
     rebin = ape.observations.Rebin(
         energy_intervals_input=response.energy_intervals_output,
         energy_intervals_output=energy_intervals_obs)
+    physical_model = MyPhysicalModel(response.energy_intervals_input)
 
     @tf.function(jit_compile=False, autograph=False)
     def observation_fn(step, xray_spectrum_params):
         xray_spectrum_params = xray_spectrum_bijector.forward(
             xray_spectrum_params)
-        physical_model = MyPhysicalModel(
-            response.energy_intervals_input,
-            xray_spectrum_params)
+
+        physical_model.set_parameter(xray_spectrum_params)
 
         flux = tf.zeros(response.energy_size_input, dtype=dtype)
         flux = physical_model(flux)
@@ -93,8 +95,9 @@ def main():
 
         return observation_dist
 
-    t0 = time.time()
     num_particles = set_particle_numbers()
+
+    t0 = time.time()
     [
      particle,
      log_weights,
@@ -113,50 +116,25 @@ def main():
     print("Inference ran in {:.2f}s.".format(t1-t0))
 
     particle_bijectored = xray_spectrum_bijector.forward(particle)
-    latent_values = tf.convert_to_tensor(
+    latent_values_true = tf.convert_to_tensor(
         np.loadtxt("data/latents.txt"), dtype=dtype)
 
-    import matplotlib.pyplot as plt
+    extools.plot_and_save_particle_latent(
+        particle_bijectored,
+        latents_true=latent_values_true,
+        latent_labels=["powerlaw.photon_index", "powerlaw.normalization"],
+        quantiles=[[0.025, 0.975], [0.001, 0.999]],
+        savepath=".cache/figs/latent_values_particle.png",
+        show=True)
 
-    particle_percentile = tfp.stats.percentile(
-        particle_bijectored, [5, 50, 95], axis=1)
-
-    times = tf.range(latent_values.shape[0])
-    fig, ax = plt.subplots(2, sharex=True)
-    ax[0].plot(times, latent_values[:, 0], color="k")
-    ax[0].plot(times, particle_percentile[1, :, 0], color="r")
-    ax[0].fill_between(times,
-                       particle_percentile[0, :, 0],
-                       particle_percentile[2, :, 0],
-                       color="r", alpha=0.1)
-    ax[1].plot(times, latent_values[:, 1], color="k")
-    ax[1].plot(times, particle_percentile[1, :, 1], color="r")
-    ax[1].fill_between(times,
-                       particle_percentile[0, :, 1],
-                       particle_percentile[2, :, 1],
-                       color="r", alpha=0.1)
-    plt.show()
-    plt.close()
-
-    # Observation plots.
-    obs = []
-    for t in range(100):
-        obs_val = observation_fn(None, particle[t]).mean()
-        obs.append(obs_val)
-    obs = tf.convert_to_tensor(obs)
-
-    fig, ax = plt.subplots(10, sharex=True, figsize=(10, 10),
-                           constrained_layout=True)
-    times = tf.range(100)
-    for j in range(10):
-        ax[j].plot(times, observed_values[:, j], color="k")
-        ax[j].fill_between(
-            times,
-            *tfp.stats.percentile(obs[:, :, j], [5, 95], axis=1),
-            color="r", alpha=0.30)
-        ax[j].set_yscale("log")
-    plt.show()
-    plt.close()
+    extools.plot_and_save_particle_observation(
+        particle,
+        observation_fn,
+        observation_true=observed_values,
+        quantiles=[[0.025, 0.975], [0.001, 0.999]],
+        logy=True,
+        savepath=".cache/figs/observation_values_particle.png",
+        show=True)
 
 
 if __name__ == "__main__":
