@@ -85,12 +85,10 @@ def main():
         flux = response(flux)
         flux = rebin(flux)
 
-        # Is it OK to use flux as scale? The true value is
-        # 10 for each band. However, if we give true value
-        # to scale, distribution converges into one value,
-        # meaning distribution approximation filed.
+        # Assume that the Signal-to-Noise Ratio for each band
+        # is 10%, and this information is known.
         observation_dist = tfd.Independent(
-            tfd.Normal(loc=flux, scale=10.),
+            tfd.Normal(loc=flux, scale=0.1*flux),
             reinterpreted_batch_ndims=1)
 
         return observation_dist
@@ -120,14 +118,23 @@ def main():
 
     import matplotlib.pyplot as plt
 
-    particle_centers = tfp.stats.percentile(particle_bijectored, [50], axis=1)
+    particle_percentile = tfp.stats.percentile(
+        particle_bijectored, [5, 50, 95], axis=1)
+
+    times = tf.range(latent_values.shape[0])
     fig, ax = plt.subplots(2, sharex=True)
-    ax[0].plot(latent_values[:, 0], color="k")
-    ax[0].plot(particle_centers[0, :, 0], color="b")
-    ax[0].plot(particle_bijectored[..., 0], color="r", alpha=0.01)
-    ax[1].plot(latent_values[:, 1], color="k")
-    ax[1].plot(particle_centers[0, :, 1], color="b")
-    ax[1].plot(particle_bijectored[..., 1], color="r", alpha=0.01)
+    ax[0].plot(times, latent_values[:, 0], color="k")
+    ax[0].plot(times, particle_percentile[1, :, 0], color="r")
+    ax[0].fill_between(times,
+                       particle_percentile[0, :, 0],
+                       particle_percentile[2, :, 0],
+                       color="r", alpha=0.1)
+    ax[1].plot(times, latent_values[:, 1], color="k")
+    ax[1].plot(times, particle_percentile[1, :, 1], color="r")
+    ax[1].fill_between(times,
+                       particle_percentile[0, :, 1],
+                       particle_percentile[2, :, 1],
+                       color="r", alpha=0.1)
     plt.show()
     plt.close()
 

@@ -124,6 +124,8 @@ def main():
     flux = physical_model(flux)
     flux = response(flux)
     flux = rebin(flux)
+    # Add 10 % noise.
+    flux = flux + tf.random.normal(flux.shape, stddev=0.1*flux)
 
     time_spectra = flux
 
