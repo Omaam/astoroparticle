@@ -62,7 +62,7 @@ def main():
     energy_range_obs = [0.5, 10.]
     energy_edges_obs = tf.linspace(energy_range_obs[0], energy_range_obs[1],
                                    num_energy_obs+1)
-    energy_interval_obs = tf.concat(
+    energy_intervals_obs = tf.concat(
         [energy_edges_obs[:-1][:, tf.newaxis],
          energy_edges_obs[1:][:, tf.newaxis]],
         axis=-1)
@@ -70,7 +70,7 @@ def main():
     response = ap.experimental.observations.ResponseNicerXti()
     rebin = ape.observations.Rebin(
         energy_intervals_input=response.energy_intervals_output,
-        energy_intervals_output=energy_interval_obs)
+        energy_intervals_output=energy_intervals_obs)
 
     @tf.function(jit_compile=False, autograph=False)
     def observation_fn(step, xray_spectrum_params):
@@ -90,7 +90,7 @@ def main():
         # to scale, distribution converges into one value,
         # meaning distribution approximation filed.
         observation_dist = tfd.Independent(
-            tfd.Normal(loc=flux, scale=flux),
+            tfd.Normal(loc=flux, scale=10.),
             reinterpreted_batch_ndims=1)
 
         return observation_dist
@@ -114,20 +114,40 @@ def main():
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
 
-    particle = xray_spectrum_bijector.forward(particle)
+    particle_bijectored = xray_spectrum_bijector.forward(particle)
     latent_values = tf.convert_to_tensor(
         np.loadtxt("data/latents.txt"), dtype=dtype)
 
     import matplotlib.pyplot as plt
 
-    particle_centers = tfp.stats.percentile(particle, [50], axis=1)
-    fig, ax = plt.subplots(2)
+    particle_centers = tfp.stats.percentile(particle_bijectored, [50], axis=1)
+    fig, ax = plt.subplots(2, sharex=True)
     ax[0].plot(latent_values[:, 0], color="k")
     ax[0].plot(particle_centers[0, :, 0], color="b")
-    ax[0].plot(particle[:, :, 0], color="r", alpha=0.01)
+    ax[0].plot(particle_bijectored[..., 0], color="r", alpha=0.01)
     ax[1].plot(latent_values[:, 1], color="k")
     ax[1].plot(particle_centers[0, :, 1], color="b")
-    ax[1].plot(particle[:, :, 1], color="r", alpha=0.01)
+    ax[1].plot(particle_bijectored[..., 1], color="r", alpha=0.01)
+    plt.show()
+    plt.close()
+
+    # Observation plots.
+    obs = []
+    for t in range(100):
+        obs_val = observation_fn(None, particle[t]).mean()
+        obs.append(obs_val)
+    obs = tf.convert_to_tensor(obs)
+
+    fig, ax = plt.subplots(10, sharex=True, figsize=(10, 10),
+                           constrained_layout=True)
+    times = tf.range(100)
+    for j in range(10):
+        ax[j].plot(times, observed_values[:, j], color="k")
+        ax[j].fill_between(
+            times,
+            *tfp.stats.percentile(obs[:, :, j], [5, 95], axis=1),
+            color="r", alpha=0.30)
+        ax[j].set_yscale("log")
     plt.show()
     plt.close()
 

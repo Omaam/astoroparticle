@@ -77,6 +77,18 @@ def plot_and_save_energyspectra(energies, time_spectra, savename=None,
     plt.close()
 
 
+class MyPhysicalModel:
+
+    def __init__(self, energy_intervals, x):
+        x = tf.unstack(x, axis=1)
+        self.powerlaw = ap.experimental.observations.PowerLaw(
+            energy_intervals, x[0], x[1])
+
+    def __call__(self, flux):
+        flux = self.powerlaw(flux)
+        return flux
+
+
 def main():
 
     # Parameter settings.
@@ -87,33 +99,32 @@ def main():
 
     params = generate_sample_varmodel()
     params = np.exp(params)
-    params = params * np.array([1.0, 10.])
+    params = tf.convert_to_tensor(
+        params * np.array([1.0, 10.]),
+        dtype=tf.float32)
 
     times = np.arange(num_timesteps)
 
-    energy_edges_model = tf.linspace(0.1, 20.0, 3451+1)
-    energy_edges_nicer = tf.linspace(0.1, 20.0, 1501+1)
     energy_edges_obs = tf.linspace(energy_kev_start, energy_kev_end,
                                    num_bands+1)
-
-    energy_intervals_model = tf.stack([energy_edges_model[:-1],
-                                       energy_edges_model[1:]],
-                                      axis=1)
-    energy_intervals_nicer = tf.stack([energy_edges_nicer[:-1],
-                                       energy_edges_nicer[1:]],
-                                      axis=1)
     energy_intervals_obs = tf.stack([energy_edges_obs[:-1],
                                      energy_edges_obs[1:]],
                                     axis=1)
 
-    flux = tf.zeros([num_timesteps, 3451], dtype=tf.float32)
-    flux = ape.observations.PowerLaw(
-            energy_intervals_model, params[:, 0], params[:, 1])(flux)
-    flux = ape.observations.ResponseNicerXti()(flux)
-    flux = ape.observations.Rebin(
-        energy_intervals_nicer,
-        energy_intervals_obs)(flux)
-    flux = flux + tf.random.normal([num_timesteps, num_bands], 0.0, 10.)
+    dtype = tf.float32
+
+    response = ap.experimental.observations.ResponseNicerXti()
+    rebin = ape.observations.Rebin(
+        energy_intervals_input=response.energy_intervals_output,
+        energy_intervals_output=energy_intervals_obs)
+    physical_model = MyPhysicalModel(
+        response.energy_intervals_input, params)
+
+    flux = tf.zeros(response.energy_size_input, dtype=dtype)
+    flux = physical_model(flux)
+    flux = response(flux)
+    flux = rebin(flux)
+
     time_spectra = flux
 
     savepath_latent = util.join_and_create_directory(
