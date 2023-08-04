@@ -112,9 +112,9 @@ def plot_and_save_particle_observation(particles,
             ax[j].set_yscale("log")
 
     ax[-1].set_xlabel("Time")
+    fig.align_ylabels()
     if savepath is not None:
         plt.savefig(savepath, dpi=150)
     if show:
         plt.show()
-    fig.align_ylabels()
     plt.close()

@@ -4,6 +4,8 @@ import tensorflow as tf
 
 from astroparticle.python.experimental.observations.\
     xray_spectrum.components.physical_component import PhysicalComponent
+from astroparticle.python.experimental.observations.\
+    xray_spectrum.components import util as comp_util
 
 
 class PowerLaw(PhysicalComponent):
@@ -25,19 +27,20 @@ class PowerLaw(PhysicalComponent):
 
     def _forward(self, flux):
         """Forward to calculate flux.
-
-        TODO:
-            Powerlaw in xspec should be referenced.
         """
-        photon_index = self.photon_index
-        normalization = self.normalization
+        # TODO: Many uses of `tf.newaxis` make a mess.
+        # Find another tider way.
+        energy_intervals = self.energy_intervals_input
+        photon_index = self.photon_index[:, tf.newaxis, tf.newaxis]
+        normalization = self.normalization[:, tf.newaxis]
 
-        energy_centers = tf.reduce_mean(
-            self.energy_intervals_input, axis=1)
+        def _powerlaw(energies):
+            return tf.math.pow(energies, -photon_index)
 
-        flux = flux + normalization[..., tf.newaxis] * tf.math.pow(
-            energy_centers, -photon_index[..., tf.newaxis])
+        new_flux = normalization * comp_util.compute_section_trapezoidal(
+                energy_intervals, _powerlaw)
 
+        flux = flux + new_flux
         return flux
 
     def _set_parameter(self, x):
