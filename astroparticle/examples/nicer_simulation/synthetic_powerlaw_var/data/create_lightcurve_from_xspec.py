@@ -125,7 +125,8 @@ def main():
     flux = response(flux)
     flux = rebin(flux)
     # Add 10 % noise.
-    flux = flux + tf.random.normal(flux.shape, stddev=0.1*flux)
+    flux = flux + tf.random.normal(flux.shape, stddev=0.1*flux,
+                                   seed=456)
 
     time_spectra = flux
 
