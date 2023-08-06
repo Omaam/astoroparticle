@@ -20,15 +20,18 @@ class Rebin(XraySpectrum):
         if flux.shape[-1] != self.energy_intervals_input.shape[-2]:
             raise ValueError()
 
+        dtype = flux.dtype
+
         energy_centers_input = tf.reduce_mean(
             self.energy_intervals_input,
             axis=-1)
 
         energy_edges_output = self._convert_intervals_to_edges(
             self.energy_intervals_output)
+
         segment_ids = tfp.stats.find_bins(energy_centers_input,
                                           energy_edges_output,
-                                          dtype=tf.float32)
+                                          dtype=dtype)
 
         # Only handle flux inside the range.
         is_nan = tf.math.logical_not(tf.math.is_nan(segment_ids))

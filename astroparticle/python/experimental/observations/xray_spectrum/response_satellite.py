@@ -20,16 +20,14 @@ class ResponseNewtonDetectorName(XraySpectrum):
 class ResponseNicerXti(XraySpectrum):
 
     def __init__(self, dtype=tf.float32):
+
+        file_dir = os.path.dirname(__file__)
         self.response_matrix = ResponseMatrixModel(
-            os.path.join(
-                os.path.dirname(__file__),
-                "data/nixtiref20170601v003.rmf")
-        )
+            os.path.join(file_dir, "data/nixtiref20170601v003.rmf"),
+            dtype=dtype)
         self.ancillary_response = AncillaryResponseModel(
-            os.path.join(
-                os.path.dirname(__file__),
-                "data/nixtiaveonaxis20170601v005.arf")
-        )
+            os.path.join(file_dir, "data/nixtiaveonaxis20170601v005.arf"),
+            dtype=dtype)
         [
          self._energy_intervals_input,
          self._energy_intervals_output
@@ -38,10 +36,10 @@ class ResponseNicerXti(XraySpectrum):
          self.response_matrix._energy_intervals_output
         ]
 
-    def _forward(self, x):
-        y = self.ancillary_response.forward(x)
-        y = self.response_matrix.forward(y)
-        return y
+    def _forward(self, flux):
+        flux = self.ancillary_response.forward(flux)
+        flux = self.response_matrix.forward(flux)
+        return flux
 
 
 class ResponseNustarDetectorName(XraySpectrum):

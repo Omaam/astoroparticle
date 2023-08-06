@@ -6,4 +6,6 @@ from astroparticle.python.experimental.observations.xray_spectrum.response impor
 from astroparticle.python.experimental.observations.xray_spectrum.response_satellite import ResponseNicerXti
 from astroparticle.python.experimental.observations.xray_spectrum.response_satellite import ResponseXrismResolve
 from astroparticle.python.experimental.observations.xray_spectrum.components.powerlaw import PowerLaw
+from astroparticle.python.experimental.observations.xray_spectrum.components.diskbb import DiskBB
+from astroparticle.python.experimental.observations.xray_spectrum.components.diskpbb import DiskPBB
 from astroparticle.python.experimental.observations.xray_spectrum.components.physical_component import PhysicalComponent

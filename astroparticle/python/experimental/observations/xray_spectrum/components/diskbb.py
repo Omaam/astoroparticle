@@ -2,33 +2,35 @@
 """
 import tensorflow as tf
 
-from astroparticle.python.experimental.observations.xray_spectrum.xray_spectrum import XraySpectrum
+from astroparticle.python.experimental.observations.\
+    xray_spectrum.components.diskpbb import DiskPBB
 
 
-class DiskBB(XraySpectrum):
-    def __init__(self, energy_edges,  photon_index, normalization,
-                 name="powerlaw"):
+class DiskBB(DiskPBB):
+    """Disk black body model
+
+    This model inherites `apo.DiskPBB` model with `photon_index=0.75`.
+    """
+    def __init__(self,
+                 energy_intervals_input,
+                 tin=1.0,
+                 normalization=1.0,
+                 dtype=tf.float32,
+                 name="diskbb"):
+
         with tf.name_scope(name) as name:
-
-            self.photon_index = tf.Variable(photon_index)
-            self.normalization = tf.Variable(normalization)
-
+            batch_shape = tin.shape
+            photon_index = tf.repeat(tf.constant(0.75, dtype=dtype),
+                                     batch_shape)
             super(DiskBB, self).__init__(
-                energy_edges,
-                num_params=2)
+                 energy_intervals_input,
+                 tin=tin,
+                 photon_index=photon_index,
+                 normalization=normalization,
+                 dtype=dtype,
+                 name=name)
 
-    def _forward(self, flux):
-        """Forward to calculate flux.
-
-        TODO:
-            Powerlaw in xspec should be referenced.
-        """
-        photon_index = self.photon_index
-        normalization = self.normalization
-
-        energy_centers = tf.reduce_mean(self.energy_edges, axis=1)
-
-        flux = flux + normalization[:, tf.newaxis] * tf.math.pow(
-            energy_centers, -photon_index[:, tf.newaxis])
-
-        return flux
+    def _set_parameter(self, x):
+        x = tf.unstack(x, axis=-1)
+        self.tin = x[0]
+        self.normalization = x[1]

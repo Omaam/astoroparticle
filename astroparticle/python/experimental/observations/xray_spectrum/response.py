@@ -58,7 +58,7 @@ class ResponseMatrixModel(XraySpectrum, DetectorResponseModel):
     def __init__(self, filepath, dtype=tf.float32, name="response_matrix"):
         with tf.name_scope(name) as name:
             self._filepath = filepath
-            self._response_matrix = self._get_response_matrix()
+            self._response_matrix = self._get_response_matrix(dtype)
 
             super(ResponseMatrixModel, self).__init__(
                 self._get_energy_intervals_input(dtype),
