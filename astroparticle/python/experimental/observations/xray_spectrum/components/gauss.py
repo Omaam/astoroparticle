@@ -42,13 +42,20 @@ class Gauss(PhysicalComponent):
         """
         # TODO: Many uses of `tf.newaxis` make a mess.
         # Find another tider way.
-        energy_intervals = self.energy_intervals_input
+        energy_intervals = self.energy_intervals_input[tf.newaxis, ...]
         energy_line = self.energy_line[:, tf.newaxis, tf.newaxis]
-        energy_width = self.energy_width[:, tf.newaxis, tf.newaxis]
+        energy_width = self.energy_width[:, tf.newaxis]
         norm = self.normalization[:, tf.newaxis]
+        print("enegy_intervals: {}".format(energy_intervals.shape))
+        print("enegy_line: {}".format(energy_line.shape))
+        print("enegy_width: {}".format(energy_width.shape))
+        print("norm: {}".format(norm.shape))
 
         def _gauss_with_param(energy_edges):
             return gauss(energy_edges, energy_line, energy_width, norm)
+
+        print(comp_util.compute_section_trapezoidal(
+            energy_intervals, _gauss_with_param).shape)
 
         new_flux = norm * comp_util.compute_section_trapezoidal(
             energy_intervals, _gauss_with_param)

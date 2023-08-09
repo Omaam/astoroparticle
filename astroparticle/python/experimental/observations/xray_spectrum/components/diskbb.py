@@ -18,10 +18,12 @@ class DiskBB(DiskPBB):
                  dtype=tf.float32,
                  name="diskbb"):
 
+        tin = tf.convert_to_tensor(tin, dtype=dtype)
+        normalization = tf.convert_to_tensor(normalization, dtype=dtype)
+
         with tf.name_scope(name) as name:
             batch_shape = tin.shape
-            photon_index = tf.repeat(tf.constant(0.75, dtype=dtype),
-                                     batch_shape)
+            photon_index = tf.broadcast_to(0.75, batch_shape)
             super(DiskBB, self).__init__(
                  energy_intervals_input,
                  tin=tin,
@@ -31,6 +33,13 @@ class DiskBB(DiskPBB):
                  name=name)
 
     def _set_parameter(self, x):
+        batch_shape = x.shape[:-1]
         x = tf.unstack(x, axis=-1)
-        self.tin = x[0]
-        self.normalization = x[1]
+        x = tf.stack(
+            [x[0],
+             tf.broadcast_to(0.75, batch_shape),
+             x[1]],
+            axis=-1)
+
+        # TODO: Is this writing style OK?
+        super(DiskBB, self)._set_parameter(x)

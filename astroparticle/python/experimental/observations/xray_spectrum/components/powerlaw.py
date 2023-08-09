@@ -32,12 +32,14 @@ class PowerLaw(PhysicalComponent):
         # Find another tider way.
         energy_intervals = self.energy_intervals_input
         photon_index = self.photon_index[:, tf.newaxis, tf.newaxis]
-        normalization = self.normalization[:, tf.newaxis]
+        norm = self.normalization[:, tf.newaxis]
+        print("enegy_intervals: {}".format(energy_intervals.shape))
+        print("norm: {}".format(norm.shape))
 
         def _powerlaw(energies):
             return tf.math.pow(energies, -photon_index)
 
-        new_flux = normalization * comp_util.compute_section_trapezoidal(
+        new_flux = norm * comp_util.compute_section_trapezoidal(
                 energy_intervals, _powerlaw)
 
         flux = flux + new_flux

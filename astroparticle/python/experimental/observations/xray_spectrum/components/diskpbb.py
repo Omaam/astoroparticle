@@ -6,7 +6,10 @@ from astroparticle.python.experimental.observations.\
     xray_spectrum.components.physical_component import PhysicalComponent
 
 
-@tf.function(autograph=False, jit_compile=True)
+JIT_COMPILE = True
+
+
+@tf.function(autograph=False, jit_compile=JIT_COMPILE)
 def dkbflx(tin, photon_index, energy, dtype=tf.float32):
     """
     calculate the flux of the disk blackbody model at a given energy.
@@ -77,7 +80,7 @@ def dkbflx(tin, photon_index, energy, dtype=tf.float32):
     return photar
 
 
-@tf.function(autograph=False, jit_compile=True)
+@tf.function(autograph=False, jit_compile=JIT_COMPILE)
 def diskpbb(energy_edges, num_energies, param, dtype=tf.float32):
     """
     compute the multicolor disk blackbody model spectrum.
@@ -163,5 +166,6 @@ class DiskPBB(PhysicalComponent):
 
     def _set_parameter(self, x):
         x = tf.unstack(x, axis=-1)
-        self.photon_index = x[0]
-        self.normalization = x[1]
+        self.tin = x[0]
+        self.photon_index = x[1]
+        self.normalization = x[2]
