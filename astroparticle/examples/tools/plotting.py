@@ -28,7 +28,8 @@ def plot_and_save_particle_latent(particles,
                                   latent_labels=None,
                                   latents_true=None,
                                   quantiles=None,
-                                  figsize=(8, 5),
+                                  figsize=None,
+                                  logy_indices=None,
                                   savepath=None,
                                   show=False):
     """Plot and save particle distributions.
@@ -47,16 +48,24 @@ def plot_and_save_particle_latent(particles,
     if latent_labels is None:
         latent_labels = [f"parameter {i}" for i in range(latent_size)]
 
+    if figsize is None:
+        figsize = (7, 1.5*latent_size)
+
     fig, ax = plt.subplots(latent_size, sharex=True, figsize=figsize)
 
     if latents_true is not None:
-        ax[0].plot(times, latents_true[:, 0], color="k")
-        ax[1].plot(times, latents_true[:, 1], color="k")
+        for i in range(latent_size):
+            ax[i].plot(times, latents_true[:, i], color="k")
 
     particle_dist_centers = np.quantile(particles, 0.5, axis=-2)
     for i in range(latent_size):
         ax[i].plot(times, particle_dist_centers[:, i], color="r")
         ax[i].set_ylabel(latent_labels[i])
+
+        if logy_indices is not None:
+            if i in logy_indices:
+                ax[i].set_yscale("log")
+
         if quantiles is not None:
             ax[i] = plot_quantiles(times, particles[..., i],
                                    quantiles, ax[i])
@@ -78,6 +87,7 @@ def plot_and_save_particle_observation(particles,
                                        observation_true=None,
                                        quantiles=None,
                                        logy=False,
+                                       logy_indices=None,
                                        figsize=None,
                                        savepath=None,
                                        show=False):
@@ -85,14 +95,13 @@ def plot_and_save_particle_observation(particles,
         lambda p: observation_function(None, p).mean(),
         particles)
 
-    num_observation = observation_particles.shape[-1]
+    observation_size = observation_particles.shape[-1]
     num_timesteps = observation_particles.shape[-3]
 
     if figsize is None:
-        figsize = (7, num_observation)
+        figsize = (7, observation_size)
 
-    print(figsize)
-    fig, ax = plt.subplots(num_observation, sharex=True,
+    fig, ax = plt.subplots(observation_size, sharex=True,
                            figsize=figsize,
                            constrained_layout=True)
     if times is None:
@@ -100,16 +109,25 @@ def plot_and_save_particle_observation(particles,
 
     if observation_labels is None:
         observation_labels = ["obs {}".format(i)
-                              for i in range(num_observation)]
+                              for i in range(observation_size)]
 
-    for j in range(num_observation):
-        ax[j].plot(times, observation_true[:, j], color="k")
-        ax[j].set_ylabel(observation_labels[j])
+    observation_centers = np.quantile(observation_particles, 0.5, axis=-2)
+    for i in range(observation_size):
+        ax[i].plot(times, observation_true[:, i], color="k")
+        ax[i].plot(times, observation_centers[:, i], color="r")
+        ax[i].set_ylabel(observation_labels[i])
         if quantiles is not None:
-            ax[j] = plot_quantiles(times, observation_particles[..., j],
-                                   quantiles, ax[j])
+            ax[i] = plot_quantiles(times, observation_particles[..., i],
+                                   quantiles, ax[i])
         if logy:
-            ax[j].set_yscale("log")
+            import warnings
+            warnings.warn("you should not use `logy`, "
+                          "instead use `logy_indices`.")
+            ax[i].set_yscale("log")
+
+        if logy_indices is not None:
+            if i in logy_indices:
+                ax[i].set_yscale("log")
 
     ax[-1].set_xlabel("Time")
     fig.align_ylabels()
