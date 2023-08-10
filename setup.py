@@ -10,6 +10,7 @@ setup(
     author="Tomoki Omama",
     packages=find_packages(),
     install_requires=[
+        "astropy",
         "tensorflow",
         "tensorflow_probability"
     ],
