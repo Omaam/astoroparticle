@@ -1,9 +1,9 @@
 """Experiment for response function.
 """
-from astroparticle.python.experimental.observations.\
-    xray_spectrum.xray_spectrum import XraySpectrum
 import tensorflow as tf
 from astropy.io import fits
+
+from astroparticle.python.experimental.spectrum.spectrum import Spectrum
 
 
 class DetectorResponseModel(tf.Module):
@@ -19,15 +19,16 @@ class DetectorResponseModel(tf.Module):
         return value
 
 
-class AncillaryResponseModel(XraySpectrum, DetectorResponseModel):
+class AncillaryResponseModel(Spectrum, DetectorResponseModel):
     def __init__(self, filepath, dtype=tf.float32,
                  name="ancillary_response"):
         with tf.name_scope(name) as name:
             self._filepath = filepath
             self._ancillary_response = self._get_ancillary_response(dtype)
+            self.dtype = dtype
             super(AncillaryResponseModel, self).__init__(
-                self._get_energy_intervals_input(dtype),
-                self._get_energy_intervals_output(dtype))
+                self._get_energy_edges_input(dtype),
+                self._get_energy_edges_output(dtype))
 
     def _forward(self, x):
         return tf.math.multiply(self._ancillary_response, x)
@@ -38,54 +39,54 @@ class AncillaryResponseModel(XraySpectrum, DetectorResponseModel):
             dtype=dtype)
         return ancillary_response
 
-    def _get_energy_intervals_input(self, dtype=tf.float32):
-        return tf.concat(
-            [tf.convert_to_tensor(self._get_value_from_file(
-                self._filepath, 1, "ENERG_LO"),
-                dtype=dtype)[:, tf.newaxis],
-             tf.convert_to_tensor(self._get_value_from_file(
-                self._filepath, 1, "ENERG_HI"),
-             dtype=dtype)[:, tf.newaxis]],
-            axis=1)
+    def _get_energy_edges_input(self, dtype=tf.float32):
+        energy_lows = tf.convert_to_tensor(
+            self._get_value_from_file(self._filepath, 1, "ENERG_LO"),
+            dtype=self.dtype)
+        energy_higs = tf.convert_to_tensor(
+            self._get_value_from_file(self._filepath, 1, "ENERG_HI"),
+            dtype=self.dtype)
+        energy_edges = tf.concat([energy_lows, [energy_higs[-1]]], axis=-1)
+        return energy_edges
 
-    def _get_energy_intervals_output(self, dtype=tf.float32):
-        return self._get_energy_intervals_input(dtype)
+    def _get_energy_edges_output(self, dtype=tf.float32):
+        return self._get_energy_edges_input(dtype)
 
 
-class ResponseMatrixModel(XraySpectrum, DetectorResponseModel):
+class ResponseMatrixModel(Spectrum, DetectorResponseModel):
     """
     """
     def __init__(self, filepath, dtype=tf.float32, name="response_matrix"):
         with tf.name_scope(name) as name:
             self._filepath = filepath
             self._response_matrix = self._get_response_matrix(dtype)
-
+            self.dtype = dtype
             super(ResponseMatrixModel, self).__init__(
-                self._get_energy_intervals_input(dtype),
-                self._get_energy_intervals_output(dtype))
+                self._get_energy_edges_input(dtype),
+                self._get_energy_edges_output(dtype))
 
     def _forward(self, x):
         return tf.matmul(x, self._response_matrix)
 
-    def _get_energy_intervals_input(self, dtype=tf.float32):
-        return tf.concat(
-            [tf.convert_to_tensor(
-                self._get_value_from_file(self._filepath, 2, "ENERG_LO"),
-                dtype=dtype)[:, tf.newaxis],
-             tf.convert_to_tensor(
-                self._get_value_from_file(self._filepath, 2, "ENERG_HI"),
-                dtype=dtype)[:, tf.newaxis]],
-            axis=1)
+    def _get_energy_edges_input(self, dtype=tf.float32):
+        energy_lows = tf.convert_to_tensor(
+            self._get_value_from_file(self._filepath, 2, "ENERG_LO"),
+            dtype=self.dtype)
+        energy_higs = tf.convert_to_tensor(
+            self._get_value_from_file(self._filepath, 2, "ENERG_HI"),
+            dtype=self.dtype)
+        energy_edges = tf.concat([energy_lows, [energy_higs[-1]]], axis=-1)
+        return energy_edges
 
-    def _get_energy_intervals_output(self, dtype=tf.float32):
-        return tf.concat(
-            [tf.convert_to_tensor(self._get_value_from_file(
-                self._filepath, 1, "E_MIN"),
-                dtype=dtype)[:, tf.newaxis],
-             tf.convert_to_tensor(self._get_value_from_file(
-                self._filepath, 1, "E_MAX"),
-                dtype=dtype)[:, tf.newaxis]],
-            axis=1)
+    def _get_energy_edges_output(self, dtype=tf.float32):
+        energy_lows = tf.convert_to_tensor(
+            self._get_value_from_file(self._filepath, 1, "E_MIN"),
+            dtype=self.dtype)
+        energy_higs = tf.convert_to_tensor(
+            self._get_value_from_file(self._filepath, 1, "E_MAX"),
+            dtype=self.dtype)
+        energy_edges = tf.concat([energy_lows, [energy_higs[-1]]], axis=-1)
+        return energy_edges
 
     def _get_response_matrix(self, dtype=tf.float32):
         num_channel_output = tf.cast(

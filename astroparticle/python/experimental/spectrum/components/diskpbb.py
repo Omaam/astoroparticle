@@ -2,8 +2,8 @@
 """
 import tensorflow as tf
 
-from astroparticle.python.experimental.observations.\
-    xray_spectrum.components.physical_component import PhysicalComponent
+from astroparticle.python.experimental.spectrum.components.physical_component \
+    import PhysicalComponent
 
 
 JIT_COMPILE = True
@@ -65,19 +65,10 @@ def dkbflx(tin, photon_index, energy, dtype=tf.float32):
 
     energy_batch = energy[tf.newaxis, :, :]
     photon_index_batch = photon_index[..., tf.newaxis, tf.newaxis]
-    photar = 2.78e-3 * energy_batch * energy_batch * photon * (
+    photons = 2.78e-3 * energy_batch * energy_batch * photon * (
         0.75 / photon_index_batch)
 
-    # assert energy.shape == (3491, 5)
-    # assert energy_integ.shape == (1, 3491, 5, 1, 1)
-    # assert x.shape == (nnn, 5)
-    # assert energy.shape == (3491, 5)
-    # assert dk.shape == (*batch_shape, 3491, 5, nnn, 5)
-    # assert gauss_left.shape == (5,)
-    # assert photon.shape == (*batch_shape, 3491, 5)
-    # assert photar.shape == (*batch_shape, 3491, 5)
-
-    return photar
+    return photons
 
 
 @tf.function(autograph=False, jit_compile=JIT_COMPILE)
@@ -92,14 +83,14 @@ def diskpbb(energy_edges, num_energies, param, dtype=tf.float32):
 
     returns:
         tuple: tuple containing arrays of photon counts in each energy
-            bin (photar) and errors (photer).
+            bin (photons) and errors (photon_errors).
     """
     gauss = tf.constant(
         [0.236926885, 0.478628670, 0.568888888, 0.478628670,
          0.236926885, -0.906179846, -0.538469310, 0.0,
          0.538469310, 0.906179846], dtype=dtype)
 
-    photer = tf.zeros(num_energies, dtype=dtype)
+    photon_errors = tf.zeros(num_energies, dtype=dtype)
 
     tin, p = tf.unstack(param, axis=-1)
 
@@ -107,6 +98,7 @@ def diskpbb(energy_edges, num_energies, param, dtype=tf.float32):
     energy_edges_prev = energy_edges[:-1]
     xn = (energy_edges_shifted - energy_edges_prev) / 2.0
 
+    # xh.shape = (energy_edges, 2)
     xh = xn + energy_edges_prev
     gauss_left = gauss[0:5]
     gauss_right = gauss[5:10]
@@ -116,14 +108,14 @@ def diskpbb(energy_edges, num_energies, param, dtype=tf.float32):
     photon = tf.reduce_sum(
         gauss_left[..., tf.newaxis, :] * dkbflx(tin, p, energy),
         axis=-1)
-    photar = photon * xn
+    photons = photon * xn
 
-    return photar, photer
+    return photons, photon_errors
 
 
 class DiskPBB(PhysicalComponent):
     def __init__(self,
-                 energy_intervals_input,
+                 energy_edges,
                  tin=1.0,
                  photon_index=0.75,
                  normalization=1.0,
@@ -131,7 +123,6 @@ class DiskPBB(PhysicalComponent):
                  name="diskpbb"):
 
         with tf.name_scope(name) as name:
-            self._energy_intervals_input = energy_intervals_input
             self.tin = tf.convert_to_tensor(
                 tin, dtype=dtype)
             self.photon_index = tf.convert_to_tensor(
@@ -140,21 +131,19 @@ class DiskPBB(PhysicalComponent):
                 normalization, dtype=dtype)
             self.dtype = dtype
             super(DiskPBB, self).__init__(
-                energy_intervals_input=energy_intervals_input,
-                energy_intervals_output=energy_intervals_input)
+                energy_edges_input=energy_edges,
+                energy_edges_output=energy_edges)
 
     def _forward(self, flux):
         """Forward to calculate flux.
         """
         # TODO: Many uses of `tf.newaxis` make a mess.
         # Find another tider way.
-        energy_intervals = self.energy_intervals_input
+        energy_edges = self.energy_edges_input
         tin = self.tin
         photon_index = self.photon_index
         normalization = self.normalization
 
-        energy_edges = tf.concat([energy_intervals[:, 0],
-                                  energy_intervals[-1, -1:]], axis=-1)
         num_energies = energy_edges.shape[0] - 1
         param = tf.stack([tin, photon_index], axis=1)
 

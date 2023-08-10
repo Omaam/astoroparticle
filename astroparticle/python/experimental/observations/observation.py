@@ -2,8 +2,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from astroparticle.python.experimental.observations.xray_spectrum.binning \
-    import Rebin
+from astroparticle.python.experimental.spectrum.binning import Rebin
 
 tfb = tfp.bijectors
 tfd = tfp.distributions

@@ -4,10 +4,10 @@ import math
 
 import tensorflow as tf
 
-from astroparticle.python.experimental.observations.\
-    xray_spectrum.components.physical_component import PhysicalComponent
-from astroparticle.python.experimental.observations.\
-    xray_spectrum.components import util as comp_util
+from astroparticle.python.experimental.spectrum.components.physical_component \
+    import PhysicalComponent
+from astroparticle.python.experimental.spectrum.components \
+    import util as comp_util
 
 
 def gauss(energy, line_energy, line_width, norm):
@@ -21,7 +21,7 @@ def gauss(energy, line_energy, line_width, norm):
 
 class Gauss(PhysicalComponent):
     def __init__(self,
-                 energy_intervals,
+                 energy_edges,
                  energy_line=6.4,
                  energy_width=0.1,
                  normalization=1.0,
@@ -33,8 +33,8 @@ class Gauss(PhysicalComponent):
             self.normalization = tf.convert_to_tensor(normalization)
 
             super(Gauss, self).__init__(
-                energy_intervals_input=energy_intervals,
-                energy_intervals_output=energy_intervals
+                energy_edges_input=energy_edges,
+                energy_edges_output=energy_edges
             )
 
     def _forward(self, flux):
@@ -42,23 +42,16 @@ class Gauss(PhysicalComponent):
         """
         # TODO: Many uses of `tf.newaxis` make a mess.
         # Find another tider way.
-        energy_intervals = self.energy_intervals_input[tf.newaxis, ...]
-        energy_line = self.energy_line[:, tf.newaxis, tf.newaxis]
+        energy_edges = self.energy_edges_input[tf.newaxis, ...]
+        energy_line = self.energy_line[:, tf.newaxis]
         energy_width = self.energy_width[:, tf.newaxis]
         norm = self.normalization[:, tf.newaxis]
-        print("enegy_intervals: {}".format(energy_intervals.shape))
-        print("enegy_line: {}".format(energy_line.shape))
-        print("enegy_width: {}".format(energy_width.shape))
-        print("norm: {}".format(norm.shape))
 
         def _gauss_with_param(energy_edges):
             return gauss(energy_edges, energy_line, energy_width, norm)
 
-        print(comp_util.compute_section_trapezoidal(
-            energy_intervals, _gauss_with_param).shape)
-
-        new_flux = norm * comp_util.compute_section_trapezoidal(
-            energy_intervals, _gauss_with_param)
+        new_flux = comp_util.compute_section_trapezoidal(
+            energy_edges, _gauss_with_param)
 
         flux = flux + new_flux
         return flux

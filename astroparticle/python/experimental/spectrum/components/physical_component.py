@@ -1,10 +1,9 @@
 """Physical component.
 """
-from astroparticle.python.experimental.observations.xray_spectrum.\
-    xray_spectrum import XraySpectrum
+from astroparticle.python.experimental.spectrum.spectrum import Spectrum
 
 
-class PhysicalComponent(XraySpectrum):
+class PhysicalComponent(Spectrum):
 
     def _set_parameter(self, x):
         raise NotImplementedError(

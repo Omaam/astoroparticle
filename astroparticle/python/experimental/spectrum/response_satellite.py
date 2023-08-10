@@ -4,20 +4,19 @@ import os
 
 import tensorflow as tf
 
-from astroparticle.python.experimental.observations.\
-    xray_spectrum.xray_spectrum import XraySpectrum
-from astroparticle.python.experimental.observations.xray_spectrum.response \
+from astroparticle.python.experimental.spectrum.spectrum import Spectrum
+from astroparticle.python.experimental.spectrum.response \
     import AncillaryResponseModel
-from astroparticle.python.experimental.observations.xray_spectrum.response \
+from astroparticle.python.experimental.spectrum.response \
     import ResponseMatrixModel
 
 
-class ResponseNewtonDetectorName(XraySpectrum):
+class ResponseNewtonDetectorName(Spectrum):
     def __init__(self):
         raise NotImplementedError()
 
 
-class ResponseNicerXti(XraySpectrum):
+class ResponseNicerXti(Spectrum):
 
     def __init__(self, dtype=tf.float32):
 
@@ -29,11 +28,11 @@ class ResponseNicerXti(XraySpectrum):
             os.path.join(file_dir, "data/nixtiaveonaxis20170601v005.arf"),
             dtype=dtype)
         [
-         self._energy_intervals_input,
-         self._energy_intervals_output
+         self._energy_edges_input,
+         self._energy_edges_output
         ] = [
-         self.ancillary_response._energy_intervals_input,
-         self.response_matrix._energy_intervals_output
+         self.ancillary_response._energy_edges_input,
+         self.response_matrix._energy_edges_output
         ]
 
     def _forward(self, flux):
@@ -42,16 +41,16 @@ class ResponseNicerXti(XraySpectrum):
         return flux
 
 
-class ResponseNustarDetectorName(XraySpectrum):
+class ResponseNustarDetectorName(Spectrum):
     def __init__(self):
         raise NotImplementedError()
 
 
-class ResponseRxteDetectorName(XraySpectrum):
+class ResponseRxteDetectorName(Spectrum):
     def __init__(self):
         raise NotImplementedError()
 
 
-class ResponseXrismResolve(XraySpectrum):
+class ResponseXrismResolve(Spectrum):
     def __init__(self):
         raise NotImplementedError()

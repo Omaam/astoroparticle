@@ -2,8 +2,7 @@
 """
 import tensorflow as tf
 
-from astroparticle.python.experimental.observations.\
-    xray_spectrum.components.gauss import Gauss
+from astroparticle.python.experimental.spectrum.components.gauss import Gauss
 
 
 class GaussTest(tf.test.TestCase):
