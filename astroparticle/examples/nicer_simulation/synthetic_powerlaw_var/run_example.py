@@ -11,7 +11,7 @@ from tensorflow_probability import distributions as tfd
 import astroparticle as ap
 from astroparticle.examples import tools as extools
 
-ape = ap.experimental
+aps = ap.spectrum
 apt = ap.transitions
 
 extools.seaborn_settings(context="notebook")
@@ -27,11 +27,10 @@ def set_particle_numbers():
     return num_particles
 
 
-class MyPhysicalModel(ap.experimental.observations.PhysicalComponent):
+class MyPhysicalModel(aps.PhysicalComponent):
 
-    def __init__(self, energy_intervals):
-        self.powerlaw = ap.experimental.observations.PowerLaw(
-            energy_intervals)
+    def __init__(self, energy_edges):
+        self.powerlaw = aps.PowerLaw(energy_edges)
 
     def __call__(self, flux):
         flux = self.powerlaw(flux)
@@ -64,16 +63,11 @@ def main():
     energy_range_obs = [0.5, 10.]
     energy_edges_obs = tf.linspace(energy_range_obs[0], energy_range_obs[1],
                                    num_energy_obs+1)
-    energy_intervals_obs = tf.concat(
-        [energy_edges_obs[:-1][:, tf.newaxis],
-         energy_edges_obs[1:][:, tf.newaxis]],
-        axis=-1)
 
-    response = ap.experimental.observations.ResponseNicerXti()
-    rebin = ape.observations.Rebin(
-        energy_intervals_input=response.energy_intervals_output,
-        energy_intervals_output=energy_intervals_obs)
-    physical_model = MyPhysicalModel(response.energy_intervals_input)
+    response = aps.ResponseNicerXti()
+    rebin = aps.Rebin(energy_edges_input=response.energy_edges_output,
+                      energy_edges_output=energy_edges_obs)
+    physical_model = MyPhysicalModel(response.energy_edges_input)
 
     @tf.function(jit_compile=False, autograph=False)
     def observation_fn(step, xray_spectrum_params):
@@ -122,7 +116,7 @@ def main():
     extools.plot_and_save_particle_latent(
         particle_bijectored,
         latents_true=latent_values_true,
-        latent_labels=["powerlaw.photon_index", "powerlaw.normalization"],
+        latent_labels=["powerlaw\nphoton_index", "powerlaw\nnormalization"],
         quantiles=[[0.025, 0.975], [0.001, 0.999]],
         savepath=".cache/figs/latent_values_particle.png",
         show=False)
@@ -132,7 +126,7 @@ def main():
         observation_fn,
         observation_true=observed_values,
         quantiles=[[0.025, 0.975], [0.001, 0.999]],
-        logy=True,
+        logy_indices=tf.range(0, num_energy_obs),
         savepath=".cache/figs/observation_values_particle.png",
         show=False)
 

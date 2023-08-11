@@ -11,7 +11,7 @@ from statsmodels.tsa.vector_ar.var_model import VARProcess
 import astroparticle as ap
 from astroparticle.examples.tools import util
 
-ape = ap.experimental
+aps = ap.spectrum
 
 
 sys.path.append("..")
@@ -45,7 +45,7 @@ def plot_and_save_curve_parameter_observation(
         ax[2].plot(times, curve, color=colors[i])
     ax[0].set_ylabel("powerlaw.PhoIndex")
     ax[1].set_ylabel("powerlaw.norm")
-    ax[2].set_ylabel("Flux")
+    ax[2].set_ylabel("counts")
     ax[2].set_yscale("log")
     ax[-1].set_xlabel("Time")
     fig.align_ylabels()
@@ -79,10 +79,9 @@ def plot_and_save_energyspectra(energies, time_spectra, savename=None,
 
 class MyPhysicalModel:
 
-    def __init__(self, energy_intervals, x):
+    def __init__(self, energy_edges, x):
         x = tf.unstack(x, axis=1)
-        self.powerlaw = ap.experimental.observations.PowerLaw(
-            energy_intervals, x[0], x[1])
+        self.powerlaw = aps.PowerLaw(energy_edges, x[0], x[1])
 
     def __call__(self, flux):
         flux = self.powerlaw(flux)
@@ -107,18 +106,14 @@ def main():
 
     energy_edges_obs = tf.linspace(energy_kev_start, energy_kev_end,
                                    num_bands+1)
-    energy_intervals_obs = tf.stack([energy_edges_obs[:-1],
-                                     energy_edges_obs[1:]],
-                                    axis=1)
 
     dtype = tf.float32
 
-    response = ap.experimental.observations.ResponseNicerXti()
-    rebin = ape.observations.Rebin(
-        energy_intervals_input=response.energy_intervals_output,
-        energy_intervals_output=energy_intervals_obs)
+    response = aps.ResponseNicerXti()
+    rebin = aps.Rebin(energy_edges_input=response.energy_edges_output,
+                      energy_edges_output=energy_edges_obs)
     physical_model = MyPhysicalModel(
-        response.energy_intervals_input, params)
+        response.energy_edges_input, params)
 
     flux = tf.zeros(response.energy_size_input, dtype=dtype)
     flux = physical_model(flux)
@@ -143,7 +138,7 @@ def main():
         times, params, time_spectra, savename=save_curve_path,
         show=True)
 
-    energies = tf.reduce_mean(energy_intervals_obs, axis=1)
+    energies = (energy_edges_obs[..., :-1] + energy_edges_obs[..., 1:]) / 2
     save_spectra_path = util.join_and_create_directory(
         "..", ".cache", "figs", "observed_energy_spectra.png")
     plot_and_save_energyspectra(
