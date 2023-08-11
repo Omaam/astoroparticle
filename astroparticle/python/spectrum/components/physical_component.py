@@ -1,6 +1,6 @@
 """Physical component.
 """
-from astroparticle.python.experimental.spectrum.spectrum import Spectrum
+from astroparticle.python.spectrum.spectrum import Spectrum
 
 
 class PhysicalComponent(Spectrum):

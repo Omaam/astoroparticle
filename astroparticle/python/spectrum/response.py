@@ -3,7 +3,7 @@
 import tensorflow as tf
 from astropy.io import fits
 
-from astroparticle.python.experimental.spectrum.spectrum import Spectrum
+from astroparticle.python.spectrum.spectrum import Spectrum
 
 
 class DetectorResponseModel(tf.Module):

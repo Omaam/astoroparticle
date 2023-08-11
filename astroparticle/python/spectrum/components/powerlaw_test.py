@@ -3,9 +3,9 @@
 import tensorflow as tf
 
 from astroparticle.python.test.xspec import XspecModel
-from astroparticle.python.experimental.spectrum.components.powerlaw \
+from astroparticle.python.spectrum.components.powerlaw \
     import PowerLaw
-from astroparticle.python.experimental.spectrum.components.testtool \
+from astroparticle.python.spectrum.components.testtool \
     import XspecTester
 
 

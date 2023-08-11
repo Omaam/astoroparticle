@@ -82,9 +82,9 @@ class MyPhysicalModel:
 
     def __init__(self, energy_edges, x):
         x = tf.unstack(x, axis=1)
-        self.powerlaw = ap.experimental.spectrum.PowerLaw(
+        self.powerlaw = aps.PowerLaw(
             energy_edges, x[0], x[1])
-        self.diskbb = ap.experimental.spectrum.DiskBB(
+        self.diskbb = aps.DiskBB(
             energy_edges, x[2], x[3])
 
     def __call__(self, flux):
@@ -115,7 +115,7 @@ def main():
         tf.linspace(energy_kev_start, energy_kev_end, num_bands+1),
         dtype, name="energy_edges_observation")
 
-    response = ap.experimental.spectrum.ResponseNicerXti()
+    response = aps.ResponseNicerXti()
     rebin = ape.spectrum.Rebin(
         energy_edges_input=response.energy_edges_output,
         energy_edges_output=energy_edges_obs)

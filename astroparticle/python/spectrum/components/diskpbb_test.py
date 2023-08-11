@@ -2,9 +2,9 @@
 """
 import tensorflow as tf
 
-from astroparticle.python.experimental.spectrum.components.diskpbb \
+from astroparticle.python.spectrum.components.diskpbb \
     import DiskPBB
-from astroparticle.python.experimental.spectrum.components.testtool \
+from astroparticle.python.spectrum.components.testtool \
     import XspecTester
 from astroparticle.python.test.xspec import XspecModel
 

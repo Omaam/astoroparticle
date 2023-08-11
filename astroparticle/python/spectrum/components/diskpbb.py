@@ -2,7 +2,7 @@
 """
 import tensorflow as tf
 
-from astroparticle.python.experimental.spectrum.components.physical_component \
+from astroparticle.python.spectrum.components.physical_component \
     import PhysicalComponent
 
 

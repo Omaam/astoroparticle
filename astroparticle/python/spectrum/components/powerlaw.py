@@ -2,10 +2,9 @@
 """
 import tensorflow as tf
 
-from astroparticle.python.experimental.spectrum.components.physical_component \
+from astroparticle.python.spectrum.components.physical_component \
     import PhysicalComponent
-from astroparticle.python.experimental.spectrum.components \
-    import util as comp_util
+from astroparticle.python.spectrum.components import util as comp_util
 
 
 class PowerLaw(PhysicalComponent):

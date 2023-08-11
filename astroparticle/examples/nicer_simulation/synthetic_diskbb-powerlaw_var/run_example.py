@@ -11,8 +11,8 @@ from tensorflow_probability import distributions as tfd
 import astroparticle as ap
 from astroparticle.examples import tools as extools
 
-ape = ap.experimental
 apt = ap.transitions
+aps = ap.spectrum
 
 extools.seaborn_settings(context="notebook")
 
@@ -27,11 +27,11 @@ def set_particle_numbers():
     return num_particles
 
 
-class MyPhysicalModel(ap.experimental.spectrum.PhysicalComponent):
+class MyPhysicalModel(aps.PhysicalComponent):
 
     def __init__(self, energy_edges):
-        self.powerlaw = ap.experimental.spectrum.PowerLaw(energy_edges)
-        self.diskbb = ap.experimental.spectrum.DiskBB(energy_edges)
+        self.powerlaw = aps.PowerLaw(energy_edges)
+        self.diskbb = aps.DiskBB(energy_edges)
 
     def __call__(self, flux):
         flux = self.powerlaw(flux)
@@ -69,10 +69,9 @@ def main():
     energy_edges_obs = tf.linspace(energy_range_obs[0], energy_range_obs[1],
                                    num_energy_obs+1)
 
-    response = ap.experimental.spectrum.ResponseNicerXti()
-    rebin = ape.spectrum.Rebin(
-        energy_edges_input=response.energy_edges_output,
-        energy_edges_output=energy_edges_obs)
+    response = aps.ResponseNicerXti()
+    rebin = aps.Rebin(energy_edges_input=response.energy_edges_output,
+                      energy_edges_output=energy_edges_obs)
     physical_model = MyPhysicalModel(response.energy_edges_input)
 
     @tf.function(jit_compile=False, autograph=False)
@@ -136,7 +135,7 @@ def main():
         quantiles=[[0.025, 0.975], [0.001, 0.999]],
         logy_indices=np.arange(observed_values.shape[1]),
         savepath=".cache/figs/observation_values_particle.png",
-        show=True)
+        show=False)
 
 
 if __name__ == "__main__":

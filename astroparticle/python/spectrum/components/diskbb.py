@@ -2,8 +2,7 @@
 """
 import tensorflow as tf
 
-from astroparticle.python.experimental.spectrum.components.diskpbb \
-    import DiskPBB
+from astroparticle.python.spectrum.components.diskpbb import DiskPBB
 
 
 class DiskBB(DiskPBB):

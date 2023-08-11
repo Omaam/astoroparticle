@@ -4,10 +4,9 @@ import math
 
 import tensorflow as tf
 
-from astroparticle.python.experimental.spectrum.components.physical_component \
+from astroparticle.python.spectrum.components.physical_component \
     import PhysicalComponent
-from astroparticle.python.experimental.spectrum.components \
-    import util as comp_util
+from astroparticle.python.spectrum.components import util as comp_util
 
 
 def gauss(energy, line_energy, line_width, norm):
@@ -40,8 +39,6 @@ class Gauss(PhysicalComponent):
     def _forward(self, flux):
         """Forward to calculate flux.
         """
-        # TODO: Many uses of `tf.newaxis` make a mess.
-        # Find another tider way.
         energy_edges = self.energy_edges_input[tf.newaxis, ...]
         energy_line = self.energy_line[:, tf.newaxis]
         energy_width = self.energy_width[:, tf.newaxis]

@@ -4,10 +4,10 @@ import os
 
 import tensorflow as tf
 
-from astroparticle.python.experimental.spectrum.spectrum import Spectrum
-from astroparticle.python.experimental.spectrum.response \
+from astroparticle.python.spectrum.spectrum import Spectrum
+from astroparticle.python.spectrum.response \
     import AncillaryResponseModel
-from astroparticle.python.experimental.spectrum.response \
+from astroparticle.python.spectrum.response \
     import ResponseMatrixModel
 
 

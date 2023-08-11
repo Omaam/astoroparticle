@@ -10,6 +10,12 @@ Welcome to AstroParticle's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   astroparticle.python.experimental
+   astroparticle.python.observations
+   astroparticle.python.particle_filter
+   astroparticle.python.spectrum
+   astroparticle.python.test
+   astroparticle.python.transitions
 
 
 Indices and tables

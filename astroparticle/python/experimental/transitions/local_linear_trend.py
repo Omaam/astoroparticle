@@ -60,13 +60,13 @@ class LocalLinearTrend(Transition):
         return indicies
 
 
-def get_transition_function_local_linear_trend(
-        latent_size,
-        level_scale,
-        slope_scale,
-        dtype=tf.float32):
-    """
+def get_transition_function_local_linear_trend(latent_size,
+                                               level_scale,
+                                               slope_scale,
+                                               dtype=tf.float32):
+    """Get transition function of local linear trend model.
 
+    ```python
     observations = [y_1, y_2]'
     latents = [level_scale_1, slope_scale_1, level_scale_2, slope_scale_2]'
     transition_matrix = [[1.0, 1.0, 0.0, 0.0],
@@ -74,8 +74,10 @@ def get_transition_function_local_linear_trend(
                          [0.0, 0.0, 1.0, 1.0],
                          [0.0, 0.0, 0.0, 1.0]]
     observaiton_matrix = [1.0, 0.0, 1.0, 0.0]
+    ```
     transition_noise ~ N(loc=0., scale=diag([level_scale_1, slope_scale_1,
                                              level_scale_2, slope_scale_2]))
+    ```
     """
     operator = tf.constant([[1.0, 1.0], [0.0, 1.0]], dtype=dtype)
     transition_matrix = tf.linalg.LinearOperatorBlockDiag(
