@@ -9,6 +9,10 @@ from astroparticle.python.spectrum.components.physical_component \
 from astroparticle.python.spectrum.components import util as comp_util
 
 
+JIT_COMPILE = True
+
+
+@tf.function(autograph=False, jit_compile=JIT_COMPILE)
 def gauss(energy, line_energy, line_width, norm):
     """Compute probability density for gauss function.
 
