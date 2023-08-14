@@ -8,4 +8,5 @@ from astroparticle.python.spectrum.components.powerlaw import PowerLaw
 from astroparticle.python.spectrum.components.diskbb import DiskBB
 from astroparticle.python.spectrum.components.diskpbb import DiskPBB
 from astroparticle.python.spectrum.components.gauss import Gauss
+from astroparticle.python.spectrum.components.phabs import PhabsNicerXti
 from astroparticle.python.spectrum.components.physical_component import PhysicalComponent

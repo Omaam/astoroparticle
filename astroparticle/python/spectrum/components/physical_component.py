@@ -11,3 +11,11 @@ class PhysicalComponent(Spectrum):
 
     def set_parameter(self, x):
         self._set_parameter(x)
+
+    def _parameter_size(self):
+        raise NotImplementedError(
+            "parameter_size not implemented")
+
+    @property
+    def parameter_size(self):
+        return self._parameter_size

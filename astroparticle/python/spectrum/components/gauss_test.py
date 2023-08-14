@@ -20,10 +20,8 @@ class _GaussTest(tf.test.TestCase, XspecTester):
         self.component_ap = Gauss(energy_edges)
 
         params = [[6.4, 0.1, 10.]]
-        self.compare_flux(params, assert_err=0.01)
-
-        # Cancel comentout when you see spectra.
-        # self._plot_two_fluxes()
+        # self.plot_two_fluxes()
+        self.compare_flux(params)
 
 
 class GaussTestDynamicShape32(_GaussTest):

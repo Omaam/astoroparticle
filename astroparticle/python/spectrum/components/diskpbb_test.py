@@ -19,10 +19,10 @@ class _DiskPBBTest(tf.test.TestCase, XspecTester):
         self.component_ap = DiskPBB(energy_edges)
 
         params = [[1.0, 0.75, 1e6]]
-        self.compare_flux(params, assert_err=1.)
+        self.compare_flux(params)
 
         # Cancel comentout when you see spectra.
-        # self._plot_two_fluxes()
+        # self.plot_two_fluxes()
 
 
 class DiskPBBTestDynamicShape32(_DiskPBBTest):

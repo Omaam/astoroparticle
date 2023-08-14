@@ -23,6 +23,9 @@ class PowerLaw(PhysicalComponent):
                 energy_edges_input=energy_edges,
                 energy_edges_output=energy_edges)
 
+            self.dtype = dtype
+            self._parameter_size = 2
+
     def _forward(self, flux):
         """Forward to calculate flux.
         """

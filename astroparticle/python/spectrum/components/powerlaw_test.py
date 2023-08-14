@@ -20,10 +20,10 @@ class _PowerLawTest(tf.test.TestCase, XspecTester):
         self.component_ap = PowerLaw(energy_edges)
 
         params = [[1.0, 10.]]
-        self.compare_flux(params, assert_err=1.)
+        self.compare_flux(params)
 
         # Cancel comentout when you see spectra.
-        # self._plot_two_fluxes()
+        # self.plot_two_fluxes()
 
 
 class PowerLawTestDynamicShape32(_PowerLawTest):
