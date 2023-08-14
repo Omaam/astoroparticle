@@ -35,10 +35,11 @@ def plot_and_save_particle_latent(particles,
     """Plot and save particle distributions.
     """
 
-    if latents_true.shape[-2] != particles.shape[-3]:
-        raise ValueError(
-            "`latents_true.shape[-2]` must be `particles.shape[-3]`. "
-            f"{latents_true.shape[-2]} != {particles.shape[-3]}.")
+    if latents_true is not None:
+        if latents_true.shape[-2] != particles.shape[-3]:
+            raise ValueError(
+                "`latents_true.shape[-2]` must be `particles.shape[-3]`. "
+                f"{latents_true.shape[-2]} != {particles.shape[-3]}.")
 
     latent_size = particles.shape[-1]
 
