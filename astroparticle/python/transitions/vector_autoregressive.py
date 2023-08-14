@@ -10,24 +10,32 @@ from astroparticle.python.transitions.transition import Transition
 class VectorAutoregressive(Transition):
     """
     """
-    def __init__(self, coefficients, noise_covariance, dtype=tf.float32):
+    def __init__(self,
+                 coefficients,
+                 noise_covariance,
+                 dtype=tf.float32,
+                 name="VectorAutoregressive"):
         """
         """
-        coefficients = tf.convert_to_tensor(coefficients, dtype=dtype)
-        self.coefficients = coefficients
-        self.order = coefficients.shape[-3]
-        self.latent_size = coefficients.shape[-2]
+        with tf.name_scope(name):
+            coefficients = tf.convert_to_tensor(coefficients, dtype=dtype)
+            noise_covariance = tf.convert_to_tensor(
+                noise_covariance, dtype=dtype)
 
-        self.transition_matrix = trans_util.make_companion_matrix(
-            coefficients)
+            self.coefficients = coefficients
+            self.order = coefficients.shape[-3]
+            self.latent_size = coefficients.shape[-2]
+            self.dtype = dtype
 
-        self.transition_noise_cov_chol = tf.linalg.LinearOperatorBlockDiag(
-            [tf.linalg.LinearOperatorFullMatrix(
-                tf.linalg.cholesky(noise_covariance)),
-             tf.linalg.LinearOperatorIdentity(
-                (self.order-1)*self.latent_size)]).to_dense()
+            self.transition_matrix = trans_util.make_companion_matrix(
+                coefficients)
 
-        self.dtype = dtype
+            self.transition_noise_cov_chol = tf.linalg.LinearOperatorBlockDiag(
+                [tf.linalg.LinearOperatorFullMatrix(
+                    tf.linalg.cholesky(noise_covariance)),
+                 tf.linalg.LinearOperatorIdentity(
+                    (self.order-1)*self.latent_size, dtype=self.dtype)]
+            ).to_dense()
 
     def _default_latent_indicies(self):
         return tf.range(self.latent_size)
