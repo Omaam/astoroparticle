@@ -139,10 +139,8 @@ class TransitionModel(ConditionalDistribution):
             self.noise_model.default_latent_indices(
                 ) + self.state_model.latent_size,
             axis=-1)
-        state_particles_new = self.state_model.forward(
-            step, state_particles)
-        noise_particles_new = self.noise_model.forward(
-            step, noise_particles)
+        state_particles_new = self.state_model.forward(step, state_particles)
+        noise_particles_new = self.noise_model.forward(step, noise_particles)
 
         particles_latent_new = tf.concat(
             [state_particles_new, noise_particles_new],
@@ -153,10 +151,13 @@ class TransitionModel(ConditionalDistribution):
                 (*batch_shape,
                  self.state_model.latent_size-self.state_model.num_dims),
                 dtype=dtype),
-             1e-1 * tf.ones((*batch_shape, self.noise_model.num_dims),
-                            dtype=dtype)
+             # add 0.01 % error for noise for resampling. If no error,
+             # particles convege to one value.
              # tf.zeros((*batch_shape, self.noise_model.num_dims),
              #          dtype=dtype)
+             1e-2 * tf.ones(
+                (*batch_shape, self.noise_model.num_dims),
+                dtype=dtype)
              ], axis=-1)
 
         return tfd.Independent(
