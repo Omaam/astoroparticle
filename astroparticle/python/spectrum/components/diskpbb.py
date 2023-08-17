@@ -6,10 +6,10 @@ from astroparticle.python.spectrum.components.physical_component \
     import PhysicalComponent
 
 
-JIT_COMPILE = True
-
-
-@tf.function(autograph=False, jit_compile=JIT_COMPILE)
+# Wrapping with `tf.function` here is not desirable, but if not,
+# execution raises the memory allocation error. The better way
+# should be considered in the future.
+@tf.function(autograph=False, jit_compile=True)
 def dkbflx(tin, photon_index, energy, dtype=tf.float32):
     """
     calculate the flux of the disk blackbody model at a given energy.
@@ -71,7 +71,6 @@ def dkbflx(tin, photon_index, energy, dtype=tf.float32):
     return photons
 
 
-@tf.function(autograph=False, jit_compile=JIT_COMPILE)
 def diskpbb(energy_edges, num_energies, param, dtype=tf.float32):
     """
     compute the multicolor disk blackbody model spectrum.

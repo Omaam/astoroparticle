@@ -10,6 +10,10 @@ class Rebin(Spectrum):
     def __init__(self,
                  energy_edges_input,
                  energy_edges_output):
+
+        energy_edges_input = tf.convert_to_tensor(energy_edges_input)
+        energy_edges_output = tf.convert_to_tensor(energy_edges_output)
+
         super(Rebin, self).__init__(
             energy_edges_input,
             energy_edges_output)
@@ -26,12 +30,24 @@ class Rebin(Spectrum):
                                           self.energy_edges_output,
                                           dtype=dtype)
 
-        # Only handle flux inside the range.
+        # Only process fluxes inside the range.
         is_nan = tf.math.logical_not(tf.math.is_nan(segment_ids))
         segment_ids = tf.cast(segment_ids[is_nan], tf.int32)
         flux = flux[..., is_nan]
 
-        binned_flux = tf.map_fn(
-            lambda f: tf.math.segment_sum(f, segment_ids), flux)
+        # This raises error when using XLA operation.
+        binned_flux = tf.linalg.matrix_transpose(
+            tf.math.segment_sum(tf.linalg.matrix_transpose(flux),
+                                segment_ids)
+        )
+        # This does not raises error, but it seems that this runs
+        # slower than above.
+        # num_segments = self.energy_edges_output.shape[-1] - 1
+        # binned_flux = tf.linalg.matrix_transpose(
+        #     tf.math.unsorted_segment_sum(
+        #         tf.linalg.matrix_transpose(flux),
+        #         segment_ids,
+        #         num_segments=num_segments)
+        # )
 
         return binned_flux
