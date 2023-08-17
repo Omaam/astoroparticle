@@ -1,14 +1,14 @@
 version: '3'
 services:
-  apenv:
+  astroparticle:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: apenv_container
+    container_name: ap_container
+    runtime: nvidia
     volumes:
       - ..:/usr/local/python/astroparticle
+    # this does not work.
+    command: pip install -e /usr/local/python/astroparticle
     ports:
       - 8080:80
-    # this does not work.
-    # command: sh -c "pip install -e /usr/local/python/astroparticle"
-    runtime: nvidia
