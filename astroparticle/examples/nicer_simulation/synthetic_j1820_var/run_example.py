@@ -5,12 +5,14 @@ import time
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensorflow_probability import bijectors as tfb
-from tensorflow_probability import distributions as tfd
 
 import astroparticle as ap
 from astroparticle.examples import tools as extools
 
+tfb = tfp.bijectors
+tfd = tfp.distributions
+
+ape = ap.experimental
 apt = ap.transitions
 aps = ap.spectrum
 
@@ -21,73 +23,41 @@ def set_particle_numbers():
     import sys
     try:
         if sys.argv[1] == "test":
-            num_particles = 200
+            num_particles = 1000
     except IndexError:
         num_particles = 10000
     return num_particles
 
 
-class MyPhysicalModel(aps.PhysicalComponent):
+class MyObservationModel(aps.PhysicalComponent):
 
-    def __init__(self, energy_edges):
-        self.powerlaw = aps.PowerLaw(energy_edges)
-        self.diskbb = aps.DiskBB(energy_edges)
-        self.phabs = aps.PhabsNicerXti(energy_edges, nh=[0.5])
+    def __init__(self, energy_edges_output):
 
-    def __call__(self, flux):
+        self.response = aps.ResponseNicerXti()
+        self.rebin = aps.Rebin(
+            energy_edges_input=self.response.energy_edges_output,
+            energy_edges_output=energy_edges_output)
+
+        energy_edges_model = self.response.energy_edges_input
+        self.powerlaw = aps.PowerLaw(energy_edges_model)
+        self.diskbb = aps.DiskBB(energy_edges_model)
+        self.phabs = aps.PhabsNicerXti(energy_edges_model, nh=[0.5])
+
+    @tf.function(autograph=False, jit_compile=False)
+    def __call__(self, step, particles):
+
+        dtype = particles.dtype
+
+        particles = self.particles_bijector.forward(particles)
+
+        self.set_parameter(particles)
+
+        flux = tf.zeros(self.response.energy_size_input, dtype=dtype)
         flux = self.powerlaw(flux)
         flux = self.diskbb(flux)
         flux = self.phabs(flux)
-        return flux
-
-    def _set_parameter(self, x):
-        self.powerlaw.set_parameter(x[:, :2])
-        self.diskbb.set_parameter(x[:, 2:4])
-
-
-def main():
-
-    dtype = tf.float32
-
-    # Load observations and true latents.
-    latent_size = 4
-    observed_values = tf.convert_to_tensor(
-        np.loadtxt("data/observations.txt"), dtype=dtype)
-
-    transition = apt.VectorAutoregressive(
-        coefficients=tf.eye(latent_size, batch_shape=(1,)),
-        noise_covariance=0.3 * tf.eye(latent_size, batch_shape=(1,)),
-        dtype=dtype)
-
-    xray_spectrum_bijector = tfb.Blockwise([
-        tfb.Chain([tfb.Scale(1.), tfb.Exp()]),
-        tfb.Chain([tfb.Scale(10.), tfb.Exp()]),
-        tfb.Chain([tfb.Scale(0.2), tfb.Exp()]),
-        tfb.Chain([tfb.Scale(1e6), tfb.Exp()]),
-    ])
-
-    # Observation part.
-    num_energy_obs = 10
-    energy_range_obs = [0.5, 10.]
-    energy_edges_obs = tf.linspace(energy_range_obs[0], energy_range_obs[1],
-                                   num_energy_obs+1)
-
-    response = aps.ResponseNicerXti()
-    rebin = aps.Rebin(energy_edges_input=response.energy_edges_output,
-                      energy_edges_output=energy_edges_obs)
-    physical_model = MyPhysicalModel(response.energy_edges_input)
-
-    @tf.function(jit_compile=False, autograph=False)
-    def observation_fn(step, xray_spectrum_params):
-        xray_spectrum_params = xray_spectrum_bijector.forward(
-            xray_spectrum_params)
-
-        physical_model.set_parameter(xray_spectrum_params)
-
-        flux = tf.zeros(response.energy_size_input, dtype=dtype)
-        flux = physical_model(flux)
-        flux = response(flux)
-        flux = rebin(flux)
+        flux = self.response(flux)
+        flux = self.rebin(flux)
 
         # Assume that the Signal-to-Noise Ratio for each band
         # is 10%, and this information is known.
@@ -97,44 +67,105 @@ def main():
 
         return observation_dist
 
-    num_particles = set_particle_numbers()
+    def _set_parameter(self, x):
+        self.powerlaw.set_parameter(x[:, :2])
+        self.diskbb.set_parameter(x[:, 2:4])
+
+    @property
+    def particles_bijector(self):
+        return tfb.Blockwise([
+            tfb.Chain([tfb.Scale(1.), tfb.Exp()]),
+            tfb.Chain([tfb.Scale(10.), tfb.Exp()]),
+            tfb.Chain([tfb.Scale(0.2), tfb.Exp()]),
+            tfb.Chain([tfb.Scale(1e6), tfb.Exp()]),
+            tfb.Chain([tfb.Identity()]),
+            tfb.Chain([tfb.Identity()]),
+            tfb.Chain([tfb.Identity()]),
+            tfb.Chain([tfb.Identity()]),
+        ])
+
+
+def main():
+
+    dtype = tf.float32
+
+    # Load observations and true latents.
+    observed_values = tf.convert_to_tensor(
+        np.loadtxt("data/observations.txt"), dtype=dtype)
+
+    num_dims = 4
+    state_var_order = 1
+    noise_trend_order = 1
+    # particle_dims = num_dims * (state_var_order + noise_trend_order)
+
+    # Transition part.
+    coefficients = 0.1 * tf.eye(num_dims, batch_shape=(state_var_order,))
+    state_model = ape.transitions.VectorAutoregressive(
+        coefficients, dtype, name="state_model_var")
+    noise_model = ape.transitions.TrendLatentModel(
+        noise_trend_order, num_dims, dtype, name="noise_model_trend")
+    transition_model = ape.transitions.TransitionModel(
+        tfd.Normal, state_model, noise_model)
+
+    # Observation part.
+    num_energy_obs = 10
+    energy_range_obs = [0.5, 10.]
+    energy_edges_obs = tf.linspace(energy_range_obs[0], energy_range_obs[1],
+                                   num_energy_obs+1)
+    observation_model = MyObservationModel(energy_edges_obs)
 
     t0 = time.time()
     [
-     particle,
+     particles,
      log_weights,
      parent_indices,
      incremental_log_marginal_likelihood,
     ] = tfp.experimental.mcmc.particle_filter(
         observed_values,
-        initial_state_prior=tfd.MultivariateNormalDiag(
-            scale_diag=tf.repeat(0.5, latent_size)),
-        transition_fn=transition.get_function(),
-        observation_fn=observation_fn,
-        num_particles=num_particles,
+        initial_state_prior=tfd.Independent(
+            tfd.Normal(loc=[0.0, 0.0, 0.0, 0.0,   # Parameter
+                            0.0, 0.0, 0.0, 0.0],  # Noise
+                       scale=[0.5, 0.5, 0.5, 0.5,
+                              0.5, 0.5, 0.5, 0.5]),
+            reinterpreted_batch_ndims=1),
+        transition_fn=transition_model,
+        observation_fn=observation_model,
+        num_particles=set_particle_numbers(),
         parallel_iterations=1,
         seed=123)
     t1 = time.time()
     print("Inference ran in {:.2f}s.".format(t1-t0))
 
-    particle_bijectored = xray_spectrum_bijector.forward(particle)
+    # index of 5 is the equivalent hydrogen column, which set
+    # to be constant.
     latent_values_true = tf.convert_to_tensor(
-        np.loadtxt("data/latents.txt"), dtype=dtype)
+        np.loadtxt("data/latents.txt"), dtype=dtype)[:, :4]
+    latent_values_true = tf.concat(
+        [latent_values_true,
+         0.3 * tf.ones(latent_values_true.shape, dtype=dtype)],
+        axis=-1)
 
+    particles_bijectored = observation_model.particles_bijector.forward(
+        particles)
     extools.plot_and_save_particle_latent(
-        particle_bijectored,
+        particles_bijectored,
         latents_true=latent_values_true,
-        latent_labels=["powerlaw\nphoton_index", "powerlaw\nnorm",
-                       "diskbb\ntin", "diskbb\nnorm",
-                       "phabs\nnh"],
+        latent_labels=["powerlaw\nphoton_index",
+                       "powerlaw\nnorm",
+                       "diskbb\ntin",
+                       "diskbb\nnorm",
+                       "noise scale\nphoton_index",
+                       "noise_scale\nnorm",
+                       "noise_scale\ntin",
+                       "noise_scale\nnorm"],
         quantiles=[[0.025, 0.975], [0.001, 0.999]],
-        logy_indices=[1, 3, 4, 5, 6],
+        logy_indices=[1, 3],
         savepath=".cache/figs/latent_values_particle.png",
-        show=False)
+        show=True)
 
     extools.plot_and_save_particle_observation(
-        particle,
-        observation_fn,
+        particles,
+        observation_model,
         observation_true=observed_values,
         quantiles=[[0.025, 0.975], [0.001, 0.999]],
         logy_indices=np.arange(observed_values.shape[1]),
