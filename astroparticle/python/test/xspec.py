@@ -1,7 +1,10 @@
 """Xspec handling module.
 """
 import numpy as np
-import xspec
+try:
+    import xspec
+except ModuleNotFoundError:
+    print("can't find 'xspec' module, and ignore importing this.")
 
 
 class XspecModel:
