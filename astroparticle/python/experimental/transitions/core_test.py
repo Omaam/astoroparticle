@@ -6,9 +6,9 @@ import tensorflow_probability as tfp
 from astroparticle.python.experimental.transitions.core \
     import LinearLatentModel
 from astroparticle.python.experimental.transitions.core \
-    import TransitionModel
+    import SelfOrganizingLatentModel
 from astroparticle.python.experimental.transitions.trend \
-    import TrendLatentModel
+    import Trend
 
 
 tfd = tfp.distributions
@@ -21,7 +21,7 @@ class _LinearLatentModelTest(tf.test.TestCase):
              [0.0, 0.1]],
             dtype=self.dtype)
         linear_state_model = LinearLatentModel(
-            transition_matrix, 2)
+            2, transition_matrix)
 
         batch_shape = (10,)
         latent_size = transition_matrix.shape[-1]
@@ -33,36 +33,39 @@ class _LinearLatentModelTest(tf.test.TestCase):
         self.assertAllClose(expected, actual)
 
 
-class LinearLatentModelTestShape32(_LinearLatentModelTest):
+class LinearLatentModelTestShape32(
+        _LinearLatentModelTest):
     dtype = tf.float32
 
 
-class LinearLatentModelTestShape64(_LinearLatentModelTest):
+class LinearLatentModelTestShape64(
+        _LinearLatentModelTest):
     dtype = tf.float64
 
 
 del _LinearLatentModelTest
 
 
-class _TransitionModelTest(tf.test.TestCase):
+class _SelfOrganizingLatentModelTest(tf.test.TestCase):
     def testForward(self):
 
         # Testing parameters.
-        state_size = 2
+        ndims = 2
         state_trend_order = 2
         noise_trend_order = 2
 
-        state_model_trend = TrendLatentModel(
-            state_trend_order, state_size, dtype=self.dtype)
-        noise_model_trend = TrendLatentModel(
-            noise_trend_order, state_size, dtype=self.dtype)
+        state_model_trend = Trend(
+            state_trend_order, ndims, dtype=self.dtype)
+        noise_model_trend = Trend(
+            noise_trend_order, ndims,
+            noise_scale=tf.ones(ndims), dtype=self.dtype)
         transition_dist = tfd.Cauchy
-        transition_model = TransitionModel(transition_dist,
-                                           state_model_trend,
-                                           noise_model_trend)
+        transition_model = SelfOrganizingLatentModel(transition_dist,
+                                                     state_model_trend,
+                                                     noise_model_trend)
 
         batch_shape = (10,)
-        latent_size = state_size * (state_trend_order + noise_trend_order)
+        latent_size = ndims * (state_trend_order + noise_trend_order)
         particles = tf.broadcast_to(
             tf.constant([0.7, 0.6, 0.3, 0.2, 0.7, 0.6, 0.3, 0.2],
                         dtype=self.dtype),
@@ -79,15 +82,15 @@ class _TransitionModelTest(tf.test.TestCase):
         self.assertAllClose(expected, actual)
 
 
-class _TransitionModelTestShape32(_TransitionModelTest):
+class _SelfOrganizingLatentModelTestShape32(_SelfOrganizingLatentModelTest):
     dtype = tf.float32
 
 
-class _TransitionModelTestShape64(_TransitionModelTest):
+class _SelfOrganizingLatentModelTestShape64(_SelfOrganizingLatentModelTest):
     dtype = tf.float64
 
 
-del _TransitionModelTest
+del _SelfOrganizingLatentModelTest
 
 
 if __name__ == "__main__":

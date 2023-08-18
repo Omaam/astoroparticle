@@ -78,10 +78,10 @@ class MyObservationModel(aps.PhysicalComponent):
             tfb.Chain([tfb.Scale(10.), tfb.Exp()]),
             tfb.Chain([tfb.Scale(0.2), tfb.Exp()]),
             tfb.Chain([tfb.Scale(1e6), tfb.Exp()]),
-            tfb.Chain([tfb.Identity()]),
-            tfb.Chain([tfb.Identity()]),
-            tfb.Chain([tfb.Identity()]),
-            tfb.Chain([tfb.Identity()]),
+            tfb.Chain([tfb.Exp()]),
+            tfb.Chain([tfb.Exp()]),
+            tfb.Chain([tfb.Exp()]),
+            tfb.Chain([tfb.Exp()]),
         ])
 
 
@@ -96,15 +96,18 @@ def main():
     num_dims = 4
     state_var_order = 1
     noise_trend_order = 1
-    # particle_dims = num_dims * (state_var_order + noise_trend_order)
 
     # Transition part.
     coefficients = 0.1 * tf.eye(num_dims, batch_shape=(state_var_order,))
     state_model = ape.transitions.VectorAutoregressive(
-        coefficients, dtype, name="state_model_var")
-    noise_model = ape.transitions.TrendLatentModel(
-        noise_trend_order, num_dims, dtype, name="noise_model_trend")
-    transition_model = ape.transitions.TransitionModel(
+        coefficients, dtype=dtype, name="state_model_var")
+    noise_model = ape.transitions.Trend(
+        noise_trend_order,
+        num_dims,
+        noise_scale=[0.01, 0.01, 0.01, 0.01],
+        dtype=dtype,
+        name="noise_model_trend")
+    transition_model = ape.transitions.SelfOrganizingLatentModel(
         tfd.Normal, state_model, noise_model)
 
     # Observation part.
@@ -124,9 +127,9 @@ def main():
         observed_values,
         initial_state_prior=tfd.Independent(
             tfd.Normal(loc=[0.0, 0.0, 0.0, 0.0,   # Parameter
-                            0.0, 0.0, 0.0, 0.0],  # Noise
+                            -1.2, -1.2, -1.2, -1.2],  # Noise
                        scale=[0.5, 0.5, 0.5, 0.5,
-                              0.5, 0.5, 0.5, 0.5]),
+                              0.6, 0.6, 0.6, 0.6]),
             reinterpreted_batch_ndims=1),
         transition_fn=transition_model,
         observation_fn=observation_model,
