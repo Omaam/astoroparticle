@@ -22,9 +22,8 @@ class Rebin(Spectrum):
 
         dtype = flux.dtype
 
-        energy_centers_input = \
-            self.energy_edges_input[..., :-1] + \
-            self.energy_edges_input[..., 1:]
+        energy_centers_input = (self.energy_edges_input[..., :-1] +
+                                self.energy_edges_input[..., 1:]) / 2
 
         segment_ids = tfp.stats.find_bins(energy_centers_input,
                                           self.energy_edges_output,
