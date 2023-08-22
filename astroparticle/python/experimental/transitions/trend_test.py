@@ -3,18 +3,17 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from astroparticle.python.experimental.transitions.trend \
-    import TrendLatentModel
+from astroparticle.python.experimental.transitions.trend import Trend
 
 
 tfd = tfp.distributions
 
 
-class _TrendLatentModelTest(tf.test.TestCase):
+class _TrendTest(tf.test.TestCase):
     def testForward(self):
         order = 2
         latent_size = 2
-        trend_model = TrendLatentModel(order, latent_size, dtype=self.dtype)
+        trend_model = Trend(order, latent_size, dtype=self.dtype)
 
         batch_shape = (10,)
         particles = 0.5 * tf.ones((*batch_shape, order*latent_size))
@@ -29,15 +28,15 @@ class _TrendLatentModelTest(tf.test.TestCase):
         self.assertAllClose(expected, actual)
 
 
-class TrendLatentModelTestShape32(_TrendLatentModelTest):
+class TrendTestShape32(_TrendTest):
     dtype = tf.float32
 
 
-class TrendLatentModelTestShape64(_TrendLatentModelTest):
+class TrendTestShape64(_TrendTest):
     dtype = tf.float64
 
 
-del _TrendLatentModelTest
+del _TrendTest
 
 
 if __name__ == "__main__":

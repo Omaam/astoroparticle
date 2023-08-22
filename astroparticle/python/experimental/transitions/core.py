@@ -79,7 +79,8 @@ class LinearLatentModel(LatentModel):
 
         with tf.name_scope(name) as name:
 
-            self._transition_matrix = transition_matrix
+            self._transition_matrix_transposed = tf.linalg.matrix_transpose(
+                transition_matrix)
             self._num_dims = num_dims
             self._latent_size = transition_matrix.shape[-1]
 
@@ -89,8 +90,7 @@ class LinearLatentModel(LatentModel):
             )
 
     def _forward(self, step, particles):
-        return particles @ tf.linalg.matrix_transpose(
-            self.transition_matrix)
+        return particles @ self.transition_matrix_transposed
 
     @property
     def latent_size(self):
@@ -99,6 +99,10 @@ class LinearLatentModel(LatentModel):
     @property
     def transition_matrix(self):
         return self._transition_matrix
+
+    @property
+    def transition_matrix_transposed(self):
+        return self._transition_matrix_transposed
 
 
 class NonLinearLatentModel(LatentModel):
@@ -162,15 +166,14 @@ class SelfOrganizingLatentModel(ParticleDistribution):
         dtype = particles.dtype
         batch_shape = particles.shape[:-1]
 
-        state_particles = tf.gather(
-            particles,
-            self.state_model.default_latent_indices(),
-            axis=-1)
-        noise_particles = tf.gather(
-            particles,
-            self.noise_model.default_latent_indices(
-                ) + self.state_model.latent_size,
-            axis=-1)
+        state_particles = tf.gather(particles,
+                                    self.state_model.default_latent_indices(),
+                                    axis=-1)
+        noise_particles = tf.gather(particles,
+                                    self.noise_model.default_latent_indices()
+                                    + self.state_model.latent_size,
+                                    axis=-1)
+
         state_particles_new = self.state_model.forward(step, state_particles)
         noise_particles_new = self.noise_model.forward(step, noise_particles)
 
@@ -204,7 +207,5 @@ class SelfOrganizingLatentModel(ParticleDistribution):
             axis=-1)
 
         return tfd.Independent(
-            self.distribution(
-                loc_particles,
-                scale_particles,
-            ), reinterpreted_batch_ndims=1)
+            self.distribution(loc_particles, scale_particles),
+            reinterpreted_batch_ndims=1)

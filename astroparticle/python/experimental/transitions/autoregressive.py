@@ -10,6 +10,7 @@ from astroparticle.python.experimental.transitions.core \
 class VectorAutoregressive(LinearLatentModel):
     def __init__(self,
                  coefficients,
+                 noise_scale=None,
                  dtype=tf.float32,
                  name="VectorAutoregressive"):
         """Build a vector autoregressive model.
@@ -40,8 +41,10 @@ class VectorAutoregressive(LinearLatentModel):
             self.order = order
 
             super(VectorAutoregressive, self).__init__(
+                num_dims=num_dims,
                 transition_matrix=transition_matrix,
-                num_dims=num_dims
+                noise_scale=noise_scale,
+                name=name
             )
 
     def _default_latent_indices(self, **kwargs):
