@@ -244,7 +244,8 @@ class PhabsNicerXti(PhysicalComponent):
             self.dtype = dtype
 
     def _forward(self, flux):
-        phabs_values = self.nh[:, tf.newaxis] * self.phabs_data
+        phabs_values = tf.exp(self.nh[:, tf.newaxis] *
+                              tf.math.log(self.phabs_data))
         flux = flux * phabs_values
         return flux
 
